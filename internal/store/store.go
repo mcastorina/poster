@@ -8,13 +8,8 @@ import (
 
 var globalDB *sql.DB
 
-type Target struct {
-	Alias string
-	URL   string
-}
-
 func InitDB() {
-	db, err := sql.Open("sqlite3", "test.db")
+	db, err := sql.Open("sqlite3", "test.db?_foreign_keys=on")
 	if err != nil {
 		panic(err)
 	}
@@ -29,54 +24,25 @@ func InitDB() {
 		url TEXT
 	);
 	`
-
 	_, err = db.Exec(targetsTable)
 	if err != nil {
 		panic(err)
 	}
 
-	globalDB = db
-}
-
-func StoreTarget(target Target) error {
-	request := `
-	INSERT OR REPLACE INTO targets(
-		alias,
-		url
-	) values(?, ?)
+	// create requests table if not exists
+	requestsTable := `
+	CREATE TABLE IF NOT EXISTS requests(
+		name TEXT NOT NULL PRIMARY KEY,
+		target TEXT,
+		method TEXT,
+		FOREIGN KEY(target) REFERENCES targets(alias)
+	);
 	`
 
-	stmt, err := globalDB.Prepare(request)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(target.Alias, target.URL)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func GetAllTargets() []Target {
-	request := `
-	SELECT alias,url FROM targets;
-	`
-	rows, err := globalDB.Query(request)
+	_, err = db.Exec(requestsTable)
 	if err != nil {
 		panic(err)
 	}
-	defer rows.Close()
 
-	var result []Target
-	for rows.Next() {
-		item := Target{}
-		err := rows.Scan(&item.Alias, &item.URL)
-		if err != nil {
-			panic(err)
-		}
-		result = append(result, item)
-	}
-	return result
+	globalDB = db
 }

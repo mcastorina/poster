@@ -91,3 +91,20 @@ func GetTargetByURL(url string) (TargetType, error) {
 	}
 	return target, nil
 }
+
+func init() {
+	if globalDB == nil {
+		initDB()
+	}
+	// create targets table if not exists
+	request := `
+	CREATE TABLE IF NOT EXISTS targets(
+		alias TEXT NOT NULL PRIMARY KEY,
+		url TEXT
+	);
+	`
+	_, err := globalDB.Exec(request)
+	if err != nil {
+		panic(err)
+	}
+}

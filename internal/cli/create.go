@@ -12,7 +12,7 @@ var createCmd = &cobra.Command{
 	Use:     "create RESOURCE",
 	Aliases: []string{"c", "add", "a"},
 	Short:   "Create a resource",
-	Long:    `Create a resource. Valid resource types: [target, request]`,
+	Long:    `Create a resource. Valid resource types: [target, request, environment]`,
 }
 var createRequestCmd = &cobra.Command{
 	Use:     "request METHOD ALIAS",
@@ -41,11 +41,24 @@ contains the following attributes:
 	Run:  createTarget,
 	Args: createTargetArgs,
 }
+var createEnvironmentCmd = &cobra.Command{
+	Use:     "environment name",
+	Aliases: []string{"env", "e"},
+	Short:   "Create an environment resource",
+	Long: `Create environment will create and save an environment resource. An
+environment resource contains the following attributes:
+
+    name                Name of the environment
+`,
+	Run:  createEnvironment,
+	Args: createEnvironmentArgs,
+}
 
 func init() {
 	rootCmd.AddCommand(createCmd)
 	createCmd.AddCommand(createRequestCmd)
 	createCmd.AddCommand(createTargetCmd)
+	createCmd.AddCommand(createEnvironmentCmd)
 
 	// create request flags
 	createRequestCmd.Flags().StringP("name", "n", "", "Name of request for ease of use")
@@ -74,6 +87,11 @@ func createTarget(cmd *cobra.Command, args []string) {
 	store.StoreTarget(store.TargetType{
 		URL:   args[0],
 		Alias: alias,
+	})
+}
+func createEnvironment(cmd *cobra.Command, args []string) {
+	store.StoreEnvironment(store.EnvironmentType{
+		Name: args[0],
 	})
 }
 
@@ -106,6 +124,12 @@ func createRequestArgs(cmd *cobra.Command, args []string) error {
 func createTargetArgs(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("expected args missing: URL")
+	}
+	return nil
+}
+func createEnvironmentArgs(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("expected args missing: name")
 	}
 	return nil
 }

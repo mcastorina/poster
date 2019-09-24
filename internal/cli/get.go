@@ -41,11 +41,24 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: getTarget,
 }
+var getEnvironmentCmd = &cobra.Command{
+	Use:     "environment",
+	Aliases: []string{"environments", "env", "envs", "e"},
+	Short:   "Print environment resources",
+	Long: `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
+
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
+	Run: getEnvironment,
+}
 
 func init() {
 	rootCmd.AddCommand(getCmd)
 	getCmd.AddCommand(getRequestCmd)
 	getCmd.AddCommand(getTargetCmd)
+	getCmd.AddCommand(getEnvironmentCmd)
 }
 
 // run functions
@@ -72,6 +85,13 @@ func getTarget(cmd *cobra.Command, args []string) {
 		} else if target, err := store.GetTargetByURL(arg); err == nil {
 			fmt.Printf("%30s%20s\n", target.Alias, target.URL)
 		}
+	}
+}
+func getEnvironment(cmd *cobra.Command, args []string) {
+	fmt.Printf("%20s\n", "NAME")
+	envs := store.GetAllEnvironments()
+	for _, env := range envs {
+		fmt.Printf("%20s\n", env.Name)
 	}
 }
 

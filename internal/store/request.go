@@ -82,3 +82,23 @@ func GetAllRequests() []RequestType {
 
 	return result
 }
+
+func init() {
+	if globalDB == nil {
+		initDB()
+	}
+	// create requests table if not exists
+	request := `
+	CREATE TABLE IF NOT EXISTS requests(
+		name TEXT NOT NULL PRIMARY KEY,
+		target TEXT,
+		method TEXT,
+		FOREIGN KEY(target) REFERENCES targets(alias)
+	);
+	`
+
+	_, err := globalDB.Exec(request)
+	if err != nil {
+		panic(err)
+	}
+}

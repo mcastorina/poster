@@ -9,7 +9,7 @@ import (
 
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "A brief description of your command",
+	Short: "Print resources",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -20,7 +20,7 @@ to quickly create a Cobra application.`,
 var getRequestCmd = &cobra.Command{
 	Use:     "request",
 	Aliases: []string{"requests", "req", "reqs", "r"},
-	Short:   "A brief description of your command",
+	Short:   "Print request resources",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -30,9 +30,9 @@ to quickly create a Cobra application.`,
 	Run: getRequest,
 }
 var getTargetCmd = &cobra.Command{
-	Use:     "target",
+	Use:     "target [alias | url] ...",
 	Aliases: []string{"targets", "t"},
-	Short:   "A brief description of your command",
+	Short:   "Print target resources",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -46,8 +46,6 @@ func init() {
 	rootCmd.AddCommand(getCmd)
 	getCmd.AddCommand(getRequestCmd)
 	getCmd.AddCommand(getTargetCmd)
-
-	getRequestCmd.Flags().StringP("alias", "a", "", "Help message for alias")
 }
 
 // run functions
@@ -59,10 +57,21 @@ func getRequest(cmd *cobra.Command, args []string) {
 	}
 }
 func getTarget(cmd *cobra.Command, args []string) {
-	targets := store.GetAllTargets()
 	fmt.Printf("%30s%20s\n", "ALIAS", "URL")
-	for _, target := range targets {
-		fmt.Printf("%30s%20s\n", target.Alias, target.URL)
+	if len(args) == 0 {
+		targets := store.GetAllTargets()
+		for _, target := range targets {
+			fmt.Printf("%30s%20s\n", target.Alias, target.URL)
+		}
+		return
+	}
+
+	for _, arg := range args {
+		if target, err := store.GetTargetByAlias(arg); err == nil {
+			fmt.Printf("%30s%20s\n", target.Alias, target.URL)
+		} else if target, err := store.GetTargetByURL(arg); err == nil {
+			fmt.Printf("%30s%20s\n", target.Alias, target.URL)
+		}
 	}
 }
 

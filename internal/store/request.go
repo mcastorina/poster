@@ -15,13 +15,7 @@ func StoreRequests(requests []RequestType) error {
 	if len(requests) == 0 {
 		return nil
 	}
-	request := `
-	INSERT INTO requests(
-		name,
-		method,
-		target
-	) VALUES
-	`
+	request := `INSERT INTO requests(name, method, target) VALUES`
 	var requestValues []string
 	var values []interface{}
 	for _, request := range requests {
@@ -32,6 +26,7 @@ func StoreRequests(requests []RequestType) error {
 
 	stmt, err := globalDB.Prepare(request)
 	if err != nil {
+		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
 		return err
 	}
@@ -39,6 +34,7 @@ func StoreRequests(requests []RequestType) error {
 
 	_, err = stmt.Exec(values...)
 	if err != nil {
+		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
 		return err
 	}
@@ -50,11 +46,10 @@ func StoreRequest(request RequestType) error {
 }
 
 func GetAllRequests() []RequestType {
-	request := `
-	SELECT name,method,target FROM requests;
-	`
+	request := `SELECT name,method,target FROM requests`
 	rows, err := globalDB.Query(request)
 	if err != nil {
+		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
 		return []RequestType{}
 	}
@@ -72,12 +67,14 @@ func GetAllRequests() []RequestType {
 		item := RequestType{}
 		err := rows.Scan(&item.Name, &item.Method, &alias)
 		if err != nil {
+			// TODO: log error
 			fmt.Printf("error: %+v\n", err)
 			return []RequestType{}
 		}
 		if target, ok := targetsMap[alias]; ok {
 			item.Target = target
 		} else {
+			// TODO: log error
 			fmt.Printf("error: alias \"%s\" not found in targets table", alias)
 		}
 		result = append(result, item)

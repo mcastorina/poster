@@ -9,20 +9,22 @@ type RequestType struct {
 	Name   string
 	Method string
 	Target TargetType
+	Path   string
 }
 
 func StoreRequests(requests []RequestType) error {
 	if len(requests) == 0 {
 		return nil
 	}
-	request := `INSERT INTO requests(name, method, target) VALUES`
+	request := `INSERT INTO requests(name, method, target, path) VALUES`
 	var requestValues []string
 	var values []interface{}
 	for _, request := range requests {
-		requestValues = append(requestValues, "(?, ?, ?)")
-		values = append(values, request.Name, request.Method, request.Target.Alias)
+		requestValues = append(requestValues, "(?, ?, ?, ?)")
+		values = append(values, request.Name, request.Method,
+			request.Target.Alias, request.Path)
 	}
-	request = fmt.Sprintf("%s %s;", request, strings.Join(requestValues, ","))
+	request = fmt.Sprintf("%s %s", request, strings.Join(requestValues, ","))
 
 	stmt, err := globalDB.Prepare(request)
 	if err != nil {
@@ -46,7 +48,7 @@ func StoreRequest(request RequestType) error {
 }
 
 func GetAllRequests() []RequestType {
-	request := `SELECT name,method,target FROM requests`
+	request := `SELECT name,method,target,path FROM requests`
 	rows, err := globalDB.Query(request)
 	if err != nil {
 		// TODO: log error
@@ -65,7 +67,7 @@ func GetAllRequests() []RequestType {
 	for rows.Next() {
 		var alias string
 		item := RequestType{}
-		err := rows.Scan(&item.Name, &item.Method, &alias)
+		err := rows.Scan(&item.Name, &item.Method, &alias, &item.Path)
 		if err != nil {
 			// TODO: log error
 			fmt.Printf("error: %+v\n", err)
@@ -93,6 +95,7 @@ func init() {
 		name TEXT NOT NULL PRIMARY KEY,
 		target TEXT,
 		method TEXT,
+		path TEXT,
 		FOREIGN KEY(target) REFERENCES targets(alias)
 	);
 	`

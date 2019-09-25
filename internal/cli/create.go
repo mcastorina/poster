@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/mcastorina/poster/internal/store"
@@ -15,7 +16,7 @@ var createCmd = &cobra.Command{
 	Long:    `Create a resource. Valid resource types: [target, request, environment]`,
 }
 var createRequestCmd = &cobra.Command{
-	Use:     "request METHOD ALIAS",
+	Use:     "request METHOD ALIAS [PATH]",
 	Aliases: []string{"req", "r"},
 	Short:   "A brief description of your command",
 	Long: `Create request will create and save a request resource. A request resource
@@ -24,6 +25,7 @@ contains the following attributes:
     name                Name of the request for ease of use
     method              HTTP request method
     target              The target alias
+    path                The URL path
 `,
 	Run:  createRequest,
 	Args: createRequestArgs,
@@ -70,6 +72,11 @@ func init() {
 
 // run functions
 func createRequest(cmd *cobra.Command, args []string) {
+	// add '/' as default arg
+	path := "/"
+	if len(args) >= 3 {
+		path = args[2]
+	}
 	name, _ := cmd.Flags().GetString("name")
 	store.StoreRequest(store.RequestType{
 		Name:   name,
@@ -77,6 +84,7 @@ func createRequest(cmd *cobra.Command, args []string) {
 		Target: store.TargetType{
 			Alias: args[1],
 		},
+		Path: path,
 	})
 }
 func createTarget(cmd *cobra.Command, args []string) {
@@ -97,9 +105,10 @@ func createEnvironment(cmd *cobra.Command, args []string) {
 
 // argument functions
 func createRequestArgs(cmd *cobra.Command, args []string) error {
-	if len(args) != 2 {
-		return fmt.Errorf("expected args missing: METHOD ALIAS")
+	if len(args) < 2 || len(args) > 3 {
+		return fmt.Errorf("expected args missing: METHOD ALIAS [PATH]")
 	}
+	// check method is valid
 	validMethods := map[string]bool{
 		"GET":     true,
 		"HEAD":    true,
@@ -119,6 +128,14 @@ func createRequestArgs(cmd *cobra.Command, args []string) error {
 			args[0], validMethodsArray)
 	}
 	args[0] = strings.ToUpper(args[0])
+	// check path is valid
+	if len(args) == 3 {
+		path, err := url.Parse(args[2])
+		if err != nil {
+			return err
+		}
+		args[2] = path.Path
+	}
 	return nil
 }
 func createTargetArgs(cmd *cobra.Command, args []string) error {

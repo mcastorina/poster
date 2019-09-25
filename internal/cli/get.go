@@ -64,9 +64,10 @@ func init() {
 // run functions
 func getRequest(cmd *cobra.Command, args []string) {
 	requests := store.GetAllRequests()
-	fmt.Printf("%20s%20s%20s\n", "NAME", "METHOD", "URL")
+	fmt.Printf("%20s%20s%20s%20s\n", "NAME", "METHOD", "URL", "PATH")
 	for _, request := range requests {
-		fmt.Printf("%20s%20s%20s\n", request.Name, request.Method, request.Target.URL)
+		fmt.Printf("%20s%20s%20s%20s\n", request.Name,
+			request.Method, request.Target.URL, request.Path)
 	}
 }
 func getTarget(cmd *cobra.Command, args []string) {

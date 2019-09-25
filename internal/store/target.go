@@ -3,14 +3,11 @@ package store
 import (
 	"fmt"
 	"strings"
+
+	"github.com/mcastorina/poster/internal/models"
 )
 
-type TargetType struct {
-	Alias string
-	URL   string
-}
-
-func StoreTargets(targets []TargetType) error {
+func StoreTargets(targets []models.Target) error {
 	if len(targets) == 0 {
 		return nil
 	}
@@ -40,54 +37,54 @@ func StoreTargets(targets []TargetType) error {
 	return nil
 }
 
-func StoreTarget(target TargetType) error {
-	return StoreTargets([]TargetType{target})
+func StoreTarget(target models.Target) error {
+	return StoreTargets([]models.Target{target})
 }
 
-func GetAllTargets() []TargetType {
+func GetAllTargets() []models.Target {
 	request := `SELECT alias,url FROM targets`
 	rows, err := globalDB.Query(request)
 	if err != nil {
 		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
-		return []TargetType{}
+		return []models.Target{}
 	}
 	defer rows.Close()
 
-	var result []TargetType
+	var result []models.Target
 	for rows.Next() {
-		item := TargetType{}
+		item := models.Target{}
 		err := rows.Scan(&item.Alias, &item.URL)
 		if err != nil {
 			// TODO: log error
 			fmt.Printf("error: %+v\n", err)
-			return []TargetType{}
+			return []models.Target{}
 		}
 		result = append(result, item)
 	}
 	return result
 }
 
-func GetTargetByAlias(alias string) (TargetType, error) {
+func GetTargetByAlias(alias string) (models.Target, error) {
 	request := `SELECT alias,url FROM targets
 				WHERE alias = ?`
 	row := globalDB.QueryRow(request, alias)
-	target := TargetType{}
+	target := models.Target{}
 	if err := row.Scan(&target.Alias, &target.URL); err != nil {
 		// TODO: log error
-		return TargetType{}, err
+		return models.Target{}, err
 	}
 	return target, nil
 }
 
-func GetTargetByURL(url string) (TargetType, error) {
+func GetTargetByURL(url string) (models.Target, error) {
 	request := `SELECT alias,url FROM targets
 				WHERE url = ?`
 	row := globalDB.QueryRow(request, url)
-	target := TargetType{}
+	target := models.Target{}
 	if err := row.Scan(&target.Alias, &target.URL); err != nil {
 		// TODO: log error
-		return TargetType{}, err
+		return models.Target{}, err
 	}
 	return target, nil
 }

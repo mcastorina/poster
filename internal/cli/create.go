@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/mcastorina/poster/internal/models"
 	"github.com/mcastorina/poster/internal/store"
 	"github.com/spf13/cobra"
 )
@@ -78,10 +79,10 @@ func createRequest(cmd *cobra.Command, args []string) {
 		path = args[2]
 	}
 	name, _ := cmd.Flags().GetString("name")
-	store.StoreRequest(store.RequestType{
+	store.StoreRequest(models.Request{
 		Name:   name,
 		Method: args[0],
-		Target: store.TargetType{
+		Target: models.Target{
 			Alias: args[1],
 		},
 		Path: path,
@@ -92,7 +93,7 @@ func createTarget(cmd *cobra.Command, args []string) {
 	if alias == "" {
 		alias = args[0]
 	}
-	store.StoreTarget(store.TargetType{
+	store.StoreTarget(models.Target{
 		URL:   args[0],
 		Alias: alias,
 	})

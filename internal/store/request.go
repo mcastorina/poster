@@ -3,16 +3,11 @@ package store
 import (
 	"fmt"
 	"strings"
+
+	"github.com/mcastorina/poster/internal/models"
 )
 
-type RequestType struct {
-	Name   string
-	Method string
-	Target TargetType
-	Path   string
-}
-
-func StoreRequests(requests []RequestType) error {
+func StoreRequests(requests []models.Request) error {
 	if len(requests) == 0 {
 		return nil
 	}
@@ -43,35 +38,35 @@ func StoreRequests(requests []RequestType) error {
 	return nil
 }
 
-func StoreRequest(request RequestType) error {
-	return StoreRequests([]RequestType{request})
+func StoreRequest(request models.Request) error {
+	return StoreRequests([]models.Request{request})
 }
 
-func GetAllRequests() []RequestType {
+func GetAllRequests() []models.Request {
 	request := `SELECT name,method,target,path FROM requests`
 	rows, err := globalDB.Query(request)
 	if err != nil {
 		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
-		return []RequestType{}
+		return []models.Request{}
 	}
 	defer rows.Close()
 
 	// Get all targets to fill request.Target
-	targetsMap := make(map[string]TargetType)
+	targetsMap := make(map[string]models.Target)
 	for _, target := range GetAllTargets() {
 		targetsMap[target.Alias] = target
 	}
 
-	var result []RequestType
+	var result []models.Request
 	for rows.Next() {
 		var alias string
-		item := RequestType{}
+		item := models.Request{}
 		err := rows.Scan(&item.Name, &item.Method, &alias, &item.Path)
 		if err != nil {
 			// TODO: log error
 			fmt.Printf("error: %+v\n", err)
-			return []RequestType{}
+			return []models.Request{}
 		}
 		if target, ok := targetsMap[alias]; ok {
 			item.Target = target
@@ -83,6 +78,25 @@ func GetAllRequests() []RequestType {
 	}
 
 	return result
+}
+
+func GetRequestByName(name string) (models.Request, error) {
+	sqlRequest := `SELECT name,method,target,path FROM requests
+				WHERE name = ?`
+	row := globalDB.QueryRow(sqlRequest, name)
+	request := models.Request{}
+	if err := row.Scan(&request.Name, &request.Method,
+		&request.Target.Alias, &request.Path); err != nil {
+		// TODO: log error
+		return models.Request{}, err
+	}
+	target, err := GetTargetByAlias(request.Target.Alias)
+	if err != nil {
+		// TODO: log error
+		return models.Request{}, err
+	}
+	request.Target = target
+	return request, nil
 }
 
 func init() {

@@ -16,6 +16,7 @@ var rootCmd = &cobra.Command{
 	Short: "API testing aid",
 	Long: `poster is a service to quickly and easily send HTTP requests.
 `,
+	Run: run,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

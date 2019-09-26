@@ -2,6 +2,9 @@ package models
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/mcastorina/poster/internal/store"
 )
 
@@ -11,7 +14,7 @@ type Resource interface {
 }
 
 type Runnable interface {
-	Run()
+	Run() error
 }
 
 // Request
@@ -21,8 +24,24 @@ type Request struct {
 	URL    string `json:"url"`
 }
 
-func (r *Request) Run() {
-	fmt.Printf("%s %s %s\n", r.Name, r.Method, r.URL)
+func (r *Request) Run() error {
+	req, err := http.NewRequest(r.Method, r.URL, nil)
+	if err != nil {
+		// TODO: log error
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		// TODO: log error
+		return err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s", body)
+	return nil
 }
 func (r *Request) ToStore() store.Request {
 	return store.Request(*r)

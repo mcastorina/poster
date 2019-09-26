@@ -97,10 +97,17 @@ func createRequestArgs(cmd *cobra.Command, args []string) error {
 	}
 	args[0] = strings.ToUpper(args[0])
 	// check url is valid
-	_, err := url.Parse(args[1])
+	if !strings.Contains(args[1], "//") {
+		args[1] = fmt.Sprintf("//%s", args[1])
+	}
+	urlObj, err := url.Parse(args[1])
 	if err != nil {
 		return err
 	}
+	if urlObj.Scheme == "" {
+		urlObj.Scheme = "http"
+	}
+	args[1] = urlObj.String()
 	return nil
 }
 func createEnvironmentArgs(cmd *cobra.Command, args []string) error {

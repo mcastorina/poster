@@ -30,19 +30,6 @@ contains the following attributes:
 	Run:  createRequest,
 	Args: createRequestArgs,
 }
-var createTargetCmd = &cobra.Command{
-	Use:     "target URL",
-	Aliases: []string{"t"},
-	Short:   "Create a target resource",
-	Long: `Create target will create and save a target resource. A target resource
-contains the following attributes:
-
-    url                 Endpoint URL
-    alias               Name of the target for ease of use
-`,
-	Run:  createTarget,
-	Args: createTargetArgs,
-}
 var createEnvironmentCmd = &cobra.Command{
 	Use:     "environment name",
 	Aliases: []string{"env", "e"},
@@ -59,45 +46,23 @@ environment resource contains the following attributes:
 func init() {
 	rootCmd.AddCommand(createCmd)
 	createCmd.AddCommand(createRequestCmd)
-	createCmd.AddCommand(createTargetCmd)
 	createCmd.AddCommand(createEnvironmentCmd)
 
 	// create request flags
 	createRequestCmd.Flags().StringP("name", "n", "", "Name of request for ease of use")
 	createRequestCmd.MarkFlagRequired("name")
-
-	// create target flags
-	createTargetCmd.Flags().StringP("alias", "a", "", "Help message for alias")
 }
 
 // run functions
 func createRequest(cmd *cobra.Command, args []string) {
 	// add '/' as default arg
-	path := "/"
-	if len(args) >= 3 {
-		path = args[2]
-	}
 	name, _ := cmd.Flags().GetString("name")
 	request := &models.Request{
 		Name:   name,
 		Method: args[0],
-		Target: models.Target{
-			Alias: args[1],
-		},
-		Path: path,
+		URL:    args[1],
 	}
 	request.Save()
-}
-func createTarget(cmd *cobra.Command, args []string) {
-	alias, _ := cmd.Flags().GetString("alias")
-	if alias == "" {
-		alias = args[0]
-	}
-	target := &models.Target{
-		URL:   args[0],
-		Alias: alias,
-	}
-	target.Save()
 }
 func createEnvironment(cmd *cobra.Command, args []string) {
 	env := &models.Environment{
@@ -108,8 +73,8 @@ func createEnvironment(cmd *cobra.Command, args []string) {
 
 // argument functions
 func createRequestArgs(cmd *cobra.Command, args []string) error {
-	if len(args) < 2 || len(args) > 3 {
-		return fmt.Errorf("expected args missing: METHOD ALIAS [PATH]")
+	if len(args) != 2 {
+		return fmt.Errorf("expected args missing: METHOD URL")
 	}
 	// check method is valid
 	validMethods := map[string]bool{
@@ -131,19 +96,10 @@ func createRequestArgs(cmd *cobra.Command, args []string) error {
 			args[0], validMethodsArray)
 	}
 	args[0] = strings.ToUpper(args[0])
-	// check path is valid
-	if len(args) == 3 {
-		path, err := url.Parse(args[2])
-		if err != nil {
-			return err
-		}
-		args[2] = path.Path
-	}
-	return nil
-}
-func createTargetArgs(cmd *cobra.Command, args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("expected args missing: URL")
+	// check url is valid
+	_, err := url.Parse(args[1])
+	if err != nil {
+		return err
 	}
 	return nil
 }

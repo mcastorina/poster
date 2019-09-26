@@ -16,43 +16,24 @@ type Runnable interface {
 
 // Request
 type Request struct {
-	Name   string
-	Method string
-	Target Target
-	Path   string
+	Name   string `json:"name"`
+	Method string `json:"method"`
+	URL    string `json:"url"`
 }
 
 func (r *Request) Run() {
-	fmt.Printf("%s %s %s %s\n", r.Name, r.Method, r.Target.URL, r.Path)
+	fmt.Printf("%s %s %s\n", r.Name, r.Method, r.URL)
 }
 func (r *Request) ToStore() store.Request {
-	return store.Request{
-		Name:   r.Name,
-		Method: r.Method,
-		Target: r.Target.Alias,
-		Path:   r.Path,
-	}
+	return store.Request(*r)
 }
 func (r *Request) Save() error {
 	return store.StoreRequest(r.ToStore())
 }
 
-// Target
-type Target struct {
-	Alias string
-	URL   string
-}
-
-func (t *Target) ToStore() store.Target {
-	return store.Target(*t)
-}
-func (t *Target) Save() error {
-	return store.StoreTarget(t.ToStore())
-}
-
 // Environment
 type Environment struct {
-	Name string
+	Name string `json:"name"`
 }
 
 func (e *Environment) ToStore() store.Environment {

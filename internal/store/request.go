@@ -6,9 +6,8 @@ import (
 
 type Request struct {
 	Name   string
-	Target string
 	Method string
-	Path   string
+	URL    string
 }
 
 func StoreRequests(requests []Request) error {
@@ -18,7 +17,7 @@ func StoreRequests(requests []Request) error {
 	tx := globalDB.MustBegin()
 
 	for _, request := range requests {
-		tx.NamedExec("INSERT INTO requests (name, target, method, path) VALUES (:name, :target, :method, :path)",
+		tx.NamedExec("INSERT INTO requests (name, method, url) VALUES (:name, :method, :url)",
 			&request)
 	}
 
@@ -56,10 +55,8 @@ func init() {
 	request := `
 	CREATE TABLE IF NOT EXISTS requests(
 		name TEXT NOT NULL PRIMARY KEY,
-		target TEXT,
 		method TEXT,
-		path TEXT,
-		FOREIGN KEY(target) REFERENCES targets(alias)
+		url TEXT
 	);
 	`
 

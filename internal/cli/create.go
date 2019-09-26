@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/mcastorina/poster/internal/models"
-	"github.com/mcastorina/poster/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -79,29 +78,32 @@ func createRequest(cmd *cobra.Command, args []string) {
 		path = args[2]
 	}
 	name, _ := cmd.Flags().GetString("name")
-	store.StoreRequest(models.Request{
+	request := &models.Request{
 		Name:   name,
 		Method: args[0],
 		Target: models.Target{
 			Alias: args[1],
 		},
 		Path: path,
-	})
+	}
+	request.Save()
 }
 func createTarget(cmd *cobra.Command, args []string) {
 	alias, _ := cmd.Flags().GetString("alias")
 	if alias == "" {
 		alias = args[0]
 	}
-	store.StoreTarget(models.Target{
+	target := &models.Target{
 		URL:   args[0],
 		Alias: alias,
-	})
+	}
+	target.Save()
 }
 func createEnvironment(cmd *cobra.Command, args []string) {
-	store.StoreEnvironment(store.EnvironmentType{
+	env := &models.Environment{
 		Name: args[0],
-	})
+	}
+	env.Save()
 }
 
 // argument functions

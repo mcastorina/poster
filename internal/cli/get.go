@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/mcastorina/poster/internal/store"
+	"github.com/mcastorina/poster/internal/models"
 	"github.com/spf13/cobra"
 )
 
@@ -63,7 +63,7 @@ func init() {
 
 // run functions
 func getRequest(cmd *cobra.Command, args []string) {
-	requests := store.GetAllRequests()
+	requests := models.GetAllRequests()
 	fmt.Printf("%20s%20s%20s%20s\n", "NAME", "METHOD", "URL", "PATH")
 	for _, request := range requests {
 		fmt.Printf("%20s%20s%20s%20s\n", request.Name,
@@ -73,7 +73,7 @@ func getRequest(cmd *cobra.Command, args []string) {
 func getTarget(cmd *cobra.Command, args []string) {
 	fmt.Printf("%30s%20s\n", "ALIAS", "URL")
 	if len(args) == 0 {
-		targets := store.GetAllTargets()
+		targets := models.GetAllTargets()
 		for _, target := range targets {
 			fmt.Printf("%30s%20s\n", target.Alias, target.URL)
 		}
@@ -81,16 +81,16 @@ func getTarget(cmd *cobra.Command, args []string) {
 	}
 
 	for _, arg := range args {
-		if target, err := store.GetTargetByAlias(arg); err == nil {
+		if target, err := models.GetTargetByAlias(arg); err == nil {
 			fmt.Printf("%30s%20s\n", target.Alias, target.URL)
-		} else if target, err := store.GetTargetByURL(arg); err == nil {
+		} else if target, err := models.GetTargetByURL(arg); err == nil {
 			fmt.Printf("%30s%20s\n", target.Alias, target.URL)
 		}
 	}
 }
 func getEnvironment(cmd *cobra.Command, args []string) {
 	fmt.Printf("%20s\n", "NAME")
-	envs := store.GetAllEnvironments()
+	envs := models.GetAllEnvironments()
 	for _, env := range envs {
 		fmt.Printf("%20s\n", env.Name)
 	}

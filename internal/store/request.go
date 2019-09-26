@@ -2,100 +2,49 @@ package store
 
 import (
 	"fmt"
-	"strings"
-
-	"github.com/mcastorina/poster/internal/models"
 )
 
-func StoreRequests(requests []models.Request) error {
+type Request struct {
+	Name   string
+	Target string
+	Method string
+	Path   string
+}
+
+func StoreRequests(requests []Request) error {
 	if len(requests) == 0 {
 		return nil
 	}
-	request := `INSERT INTO requests(name, method, target, path) VALUES`
-	var requestValues []string
-	var values []interface{}
+	tx := globalDB.MustBegin()
+
 	for _, request := range requests {
-		requestValues = append(requestValues, "(?, ?, ?, ?)")
-		values = append(values, request.Name, request.Method,
-			request.Target.Alias, request.Path)
+		tx.NamedExec("INSERT INTO requests (name, target, method, path) VALUES (:name, :target, :method, :path)",
+			&request)
 	}
-	request = fmt.Sprintf("%s %s", request, strings.Join(requestValues, ","))
 
-	stmt, err := globalDB.Prepare(request)
-	if err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(values...)
-	if err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
-		return err
-	}
-	return nil
+	return tx.Commit()
 }
 
-func StoreRequest(request models.Request) error {
-	return StoreRequests([]models.Request{request})
+func StoreRequest(request Request) error {
+	return StoreRequests([]Request{request})
 }
 
-func GetAllRequests() []models.Request {
-	request := `SELECT name,method,target,path FROM requests`
-	rows, err := globalDB.Query(request)
-	if err != nil {
+func GetAllRequests() []Request {
+	requests := []Request{}
+	if err := globalDB.Select(&requests, "SELECT * FROM requests"); err != nil {
 		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
-		return []models.Request{}
 	}
-	defer rows.Close()
-
-	// Get all targets to fill request.Target
-	targetsMap := make(map[string]models.Target)
-	for _, target := range GetAllTargets() {
-		targetsMap[target.Alias] = target
-	}
-
-	var result []models.Request
-	for rows.Next() {
-		var alias string
-		item := models.Request{}
-		err := rows.Scan(&item.Name, &item.Method, &alias, &item.Path)
-		if err != nil {
-			// TODO: log error
-			fmt.Printf("error: %+v\n", err)
-			return []models.Request{}
-		}
-		if target, ok := targetsMap[alias]; ok {
-			item.Target = target
-		} else {
-			// TODO: log error
-			fmt.Printf("error: alias \"%s\" not found in targets table", alias)
-		}
-		result = append(result, item)
-	}
-
-	return result
+	return requests
 }
 
-func GetRequestByName(name string) (models.Request, error) {
-	sqlRequest := `SELECT name,method,target,path FROM requests
-				WHERE name = ?`
-	row := globalDB.QueryRow(sqlRequest, name)
-	request := models.Request{}
-	if err := row.Scan(&request.Name, &request.Method,
-		&request.Target.Alias, &request.Path); err != nil {
+func GetRequestByName(name string) (Request, error) {
+	request := Request{}
+	if err := globalDB.Get(&request, "SELECT * FROM requests WHERE name=$1", name); err != nil {
 		// TODO: log error
-		return models.Request{}, err
+		fmt.Printf("error: %+v\n", err)
+		return Request{}, err
 	}
-	target, err := GetTargetByAlias(request.Target.Alias)
-	if err != nil {
-		// TODO: log error
-		return models.Request{}, err
-	}
-	request.Target = target
 	return request, nil
 }
 

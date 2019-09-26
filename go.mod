@@ -7,6 +7,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20190910110746-680d30ca3117 // indirect
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/jaffee/commandeer v0.1.0
+	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v0.0.5

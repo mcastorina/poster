@@ -2,89 +2,55 @@ package store
 
 import (
 	"fmt"
-	"strings"
-
-	"github.com/mcastorina/poster/internal/models"
 )
 
-func StoreTargets(targets []models.Target) error {
+type Target struct {
+	Alias string
+	URL   string
+}
+
+func StoreTargets(targets []Target) error {
 	if len(targets) == 0 {
 		return nil
 	}
-	request := `INSERT INTO targets(alias, url) VALUES`
-	var requestValues []string
-	var values []interface{}
+	tx := globalDB.MustBegin()
+
 	for _, target := range targets {
-		requestValues = append(requestValues, "(?, ?)")
-		values = append(values, target.Alias, target.URL)
+		tx.NamedExec("INSERT INTO targets (alias, url) VALUES (:alias, :url)", &target)
 	}
-	request = fmt.Sprintf("%s %s;", request, strings.Join(requestValues, ","))
 
-	stmt, err := globalDB.Prepare(request)
-	if err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(values...)
-	if err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
-		return err
-	}
-	return nil
+	return tx.Commit()
 }
 
-func StoreTarget(target models.Target) error {
-	return StoreTargets([]models.Target{target})
+func StoreTarget(target Target) error {
+	return StoreTargets([]Target{target})
 }
 
-func GetAllTargets() []models.Target {
-	request := `SELECT alias,url FROM targets`
-	rows, err := globalDB.Query(request)
-	if err != nil {
+func GetAllTargets() []Target {
+	targets := []Target{}
+	if err := globalDB.Select(&targets, "SELECT * FROM targets"); err != nil {
 		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
-		return []models.Target{}
 	}
-	defer rows.Close()
-
-	var result []models.Target
-	for rows.Next() {
-		item := models.Target{}
-		err := rows.Scan(&item.Alias, &item.URL)
-		if err != nil {
-			// TODO: log error
-			fmt.Printf("error: %+v\n", err)
-			return []models.Target{}
-		}
-		result = append(result, item)
-	}
-	return result
+	return targets
 }
 
-func GetTargetByAlias(alias string) (models.Target, error) {
-	request := `SELECT alias,url FROM targets
-				WHERE alias = ?`
-	row := globalDB.QueryRow(request, alias)
-	target := models.Target{}
-	if err := row.Scan(&target.Alias, &target.URL); err != nil {
+func GetTargetByAlias(alias string) (Target, error) {
+	target := Target{}
+	if err := globalDB.Get(&target, "SELECT * FROM targets WHERE alias=$1", alias); err != nil {
 		// TODO: log error
-		return models.Target{}, err
+		fmt.Printf("error: %+v\n", err)
+		return Target{}, err
 	}
 	return target, nil
 }
 
-func GetTargetByURL(url string) (models.Target, error) {
-	request := `SELECT alias,url FROM targets
-				WHERE url = ?`
-	row := globalDB.QueryRow(request, url)
-	target := models.Target{}
-	if err := row.Scan(&target.Alias, &target.URL); err != nil {
+func GetTargetByURL(url string) (Target, error) {
+	target := Target{}
+	if err := globalDB.Get(&target, "SELECT * FROM targets WHERE url=$1", url); err != nil {
 		// TODO: log error
-		return models.Target{}, err
+		fmt.Printf("error: %+v\n", err)
+		return Target{}, err
 	}
 	return target, nil
 }

@@ -2,10 +2,11 @@ package cli
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+	"strings"
 
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -22,6 +23,20 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	// Check if the subcommand is found; if not, add "--" to execute the run command
+	for i, arg := range os.Args {
+		if i == 0 || strings.HasPrefix(arg, "-") {
+			continue
+		}
+		if _, _, err := rootCmd.Find(os.Args[i:]); err != nil {
+			var args []string
+			args = append(args, os.Args[:i]...)
+			args = append(args, "--")
+			args = append(args, os.Args[i:]...)
+			os.Args = args
+			break
+		}
+	}
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

@@ -33,6 +33,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
 		"config file (default is $HOME/.poster.yaml)")
+	rootCmd.Flags().BoolP("verbose", "v", false, "Print verbose output")
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -34,8 +34,8 @@ func Execute() {
 			args = append(args, "--")
 			args = append(args, os.Args[i:]...)
 			os.Args = args
-			break
 		}
+		break
 	}
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

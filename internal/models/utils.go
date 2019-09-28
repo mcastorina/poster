@@ -31,3 +31,11 @@ func GetAllEnvironments() []Environment {
 	}
 	return envs
 }
+
+func GetAllVariables() []Variable {
+	vars := []Variable{}
+	for _, sVariable := range store.GetAllVariables() {
+		vars = append(vars, convertToVariable(sVariable))
+	}
+	return vars
+}

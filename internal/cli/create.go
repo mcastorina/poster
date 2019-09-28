@@ -31,7 +31,7 @@ contains the following attributes:
 	Args: createRequestArgs,
 }
 var createEnvironmentCmd = &cobra.Command{
-	Use:     "environment name",
+	Use:     "environment NAME",
 	Aliases: []string{"env", "e"},
 	Short:   "Create an environment resource",
 	Long: `Create environment will create and save an environment resource. An
@@ -42,20 +42,40 @@ environment resource contains the following attributes:
 	Run:  createEnvironment,
 	Args: createEnvironmentArgs,
 }
+var createConstVariableCmd = &cobra.Command{
+	Use:     "const-variable",
+	Aliases: []string{"const-var", "cv"},
+	Short:   "Create a constant variable resource",
+	Long: `Create const-variable will create and save a constant variable resource. A
+variable resource contains the following attributes:
+
+    name                Name of the variable
+    value               Value of the variable
+    environment         Environment this variable belongs to
+    type                Type of variable (const, request, script)
+    generator           How to generate the value
+`,
+	Run:  createConstVariable,
+	Args: createConstVariableArgs,
+}
 
 func init() {
 	rootCmd.AddCommand(createCmd)
 	createCmd.AddCommand(createRequestCmd)
 	createCmd.AddCommand(createEnvironmentCmd)
+	createCmd.AddCommand(createConstVariableCmd)
 
 	// create request flags
 	createRequestCmd.Flags().StringP("name", "n", "", "Name of request for ease of use")
 	createRequestCmd.MarkFlagRequired("name")
+
+	// create const-variable flags
+	createConstVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
+	createConstVariableCmd.MarkFlagRequired("environment")
 }
 
 // run functions
 func createRequest(cmd *cobra.Command, args []string) {
-	// add '/' as default arg
 	name, _ := cmd.Flags().GetString("name")
 	request := &models.Request{
 		Name:   name,
@@ -69,6 +89,16 @@ func createEnvironment(cmd *cobra.Command, args []string) {
 		Name: args[0],
 	}
 	env.Save()
+}
+func createConstVariable(cmd *cobra.Command, args []string) {
+	environment, _ := cmd.Flags().GetString("environment")
+	variable := &models.Variable{
+		Name:        args[0],
+		Value:       args[1],
+		Type:        models.ConstType,
+		Environment: models.Environment{Name: environment},
+	}
+	variable.Save()
 }
 
 // argument functions
@@ -112,7 +142,13 @@ func createRequestArgs(cmd *cobra.Command, args []string) error {
 }
 func createEnvironmentArgs(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("expected args missing: name")
+		return fmt.Errorf("expected args missing: NAME")
+	}
+	return nil
+}
+func createConstVariableArgs(cmd *cobra.Command, args []string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("expected args missing: NAME VALUE")
 	}
 	return nil
 }

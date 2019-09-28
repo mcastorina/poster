@@ -52,7 +52,7 @@ func init() {
 		initDB()
 	}
 	// create requests table if not exists
-	request := `
+	query := `
 	CREATE TABLE IF NOT EXISTS requests(
 		name TEXT NOT NULL PRIMARY KEY,
 		method TEXT,
@@ -60,7 +60,7 @@ func init() {
 	);
 	`
 
-	_, err := globalDB.Exec(request)
+	_, err := globalDB.Exec(query)
 	if err != nil {
 		panic(err)
 	}

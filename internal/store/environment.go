@@ -39,13 +39,13 @@ func init() {
 		initDB()
 	}
 	// create environments table if not exists
-	request := `
+	query := `
 	CREATE TABLE IF NOT EXISTS environments(
 		name TEXT NOT NULL PRIMARY KEY
 	);
 	`
 
-	_, err := globalDB.Exec(request)
+	_, err := globalDB.Exec(query)
 	if err != nil {
 		panic(err)
 	}

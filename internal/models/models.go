@@ -13,6 +13,10 @@ const (
 	FlagPrintResponseCode = uint32(0x1 << 0)
 	FlagPrintHeaders      = uint32(0x1 << 1)
 	FlagPrintBody         = uint32(0x1 << 2)
+
+	ConstType   = "const"
+	RequestType = "request"
+	ScriptType  = "script"
 )
 
 type Resource interface {
@@ -75,7 +79,7 @@ func flagIsSet(flag, flags uint32) bool {
 
 // Environment
 type Environment struct {
-	Name string `json:"name"`
+	Name string
 }
 
 func (e *Environment) ToStore() store.Environment {
@@ -83,4 +87,26 @@ func (e *Environment) ToStore() store.Environment {
 }
 func (e *Environment) Save() error {
 	return store.StoreEnvironment(e.ToStore())
+}
+
+// Variable
+type Variable struct {
+	Name        string
+	Value       string
+	Environment Environment
+	Type        string
+	Generator   string
+}
+
+func (v *Variable) ToStore() store.Variable {
+	return store.Variable{
+		Name:        v.Name,
+		Value:       v.Value,
+		Environment: v.Environment.Name,
+		Type:        v.Type,
+		Generator:   v.Generator,
+	}
+}
+func (v *Variable) Save() error {
+	return store.StoreVariable(v.ToStore())
 }

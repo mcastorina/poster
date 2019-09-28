@@ -24,7 +24,7 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	// Check if the subcommand is found; if not, add "--" to execute the run command
-	// This is kind of a hack, but it seems to be the best solution
+	// This is a hack, but it seems to be the best solution
 	prevStringWasFlag := false
 	for i, arg := range os.Args {
 		if i == 0 || strings.HasPrefix(arg, "-") || prevStringWasFlag {
@@ -34,6 +34,10 @@ func Execute() {
 			} else {
 				// -fvalue should not be marked
 				prevStringWasFlag = len(arg) == 2
+			}
+			if arg == "-v" || arg == "--verbose" {
+				// boolean flags don't have args afterwards
+				prevStringWasFlag = false
 			}
 			continue
 		}

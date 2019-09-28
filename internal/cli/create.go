@@ -68,6 +68,8 @@ func init() {
 	// create request flags
 	createRequestCmd.Flags().StringP("name", "n", "", "Name of request for ease of use")
 	createRequestCmd.MarkFlagRequired("name")
+	createRequestCmd.Flags().StringP("environment", "e", "", "Default environment for this request")
+	createRequestCmd.MarkFlagRequired("environment")
 
 	// create const-variable flags
 	createConstVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
@@ -77,10 +79,12 @@ func init() {
 // run functions
 func createRequest(cmd *cobra.Command, args []string) {
 	name, _ := cmd.Flags().GetString("name")
+	environment, _ := cmd.Flags().GetString("environment")
 	request := &models.Request{
-		Name:   name,
-		Method: args[0],
-		URL:    args[1],
+		Name:        name,
+		Method:      args[0],
+		URL:         args[1],
+		Environment: models.Environment{Name: environment},
 	}
 	request.Save()
 }

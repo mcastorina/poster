@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/mcastorina/poster/internal/store"
@@ -30,13 +32,17 @@ type Runnable interface {
 
 // Request
 type Request struct {
-	Name   string `json:"name"`
-	Method string `json:"method"`
-	URL    string `json:"url"`
+	Name        string
+	Method      string
+	URL         string
+	Environment Environment
 }
 
 func (r *Request) Run(flags uint32) error {
-	req, err := http.NewRequest(r.Method, r.URL, nil)
+	method := r.Environment.ReplaceVariables(r.Method)
+	url := r.Environment.ReplaceVariables(r.URL)
+
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		// TODO: log error
 		return err
@@ -66,9 +72,6 @@ func (r *Request) Run(flags uint32) error {
 	}
 	return nil
 }
-func (r *Request) ToStore() store.Request {
-	return store.Request(*r)
-}
 func (r *Request) Save() error {
 	return store.StoreRequest(r.ToStore())
 }
@@ -82,11 +85,55 @@ type Environment struct {
 	Name string
 }
 
-func (e *Environment) ToStore() store.Environment {
-	return store.Environment(*e)
-}
 func (e *Environment) Save() error {
 	return store.StoreEnvironment(e.ToStore())
+}
+
+func (e *Environment) GetVariables() []Variable {
+	validVariables := []Variable{}
+	for _, variable := range store.GetVariablesByEnvironment(e.Name) {
+		validVariables = append(validVariables, convertToVariable(variable))
+	}
+	return validVariables
+}
+
+func (e *Environment) ReplaceVariables(input string) string {
+	if strings.Index(input, ":") == -1 {
+		return input
+	}
+
+	type locType struct {
+		startIndex int
+		endIndex   int
+		value      string
+	}
+	varLocs := []locType{}
+
+	// Iterate over all variables and create a slice of their locations
+	// in the input string.
+	for _, variable := range e.GetVariables() {
+		re := regexp.MustCompile(`:` + variable.Name + `\b`)
+		for _, loc := range re.FindAllStringIndex(input, -1) {
+			varLocs = append(varLocs, locType{
+				startIndex: loc[0],
+				endIndex:   loc[1],
+				value:      variable.Value,
+			})
+		}
+	}
+
+	// Reverse sort the list to iterate from largest startIndex to smallest
+	sort.Slice(varLocs, func(i, j int) bool {
+		return varLocs[i].startIndex > varLocs[j].startIndex
+	})
+
+	output := input
+	for _, loc := range varLocs {
+		// Replace [startIndex:endIndex] with value
+		output = output[:loc.startIndex] + loc.value + output[loc.endIndex:]
+	}
+
+	return output
 }
 
 // Variable
@@ -98,15 +145,6 @@ type Variable struct {
 	Generator   string
 }
 
-func (v *Variable) ToStore() store.Variable {
-	return store.Variable{
-		Name:        v.Name,
-		Value:       v.Value,
-		Environment: v.Environment.Name,
-		Type:        v.Type,
-		Generator:   v.Generator,
-	}
-}
 func (v *Variable) Save() error {
 	return store.StoreVariable(v.ToStore())
 }

@@ -1,6 +1,8 @@
 package models
 
-import "github.com/mcastorina/poster/internal/store"
+import (
+	"github.com/mcastorina/poster/internal/store"
+)
 
 func GetRunnableResourceByName(name string) (Runnable, error) {
 	resource, err := GetRequestByName(name)

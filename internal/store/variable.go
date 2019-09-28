@@ -43,12 +43,23 @@ func GetAllVariables() []Variable {
 
 func GetVariableByName(name string) (Variable, error) {
 	variable := Variable{}
-	if err := globalDB.Get(&variable, "SELECT * FROM variables WHERE name=$1", name); err != nil {
+	if err := globalDB.Get(&variable,
+		"SELECT * FROM variables WHERE name=$1", name); err != nil {
 		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
 		return Variable{}, err
 	}
 	return variable, nil
+}
+
+func GetVariablesByEnvironment(environment string) []Variable {
+	variables := []Variable{}
+	if err := globalDB.Select(&variables,
+		"SELECT * FROM variables WHERE environment=$1", environment); err != nil {
+		// TODO: log error
+		fmt.Printf("error: %+v\n", err)
+	}
+	return variables
 }
 
 func init() {
@@ -58,11 +69,12 @@ func init() {
 	// create requests table if not exists
 	query := `
 	CREATE TABLE IF NOT EXISTS variables(
-		name TEXT NOT NULL PRIMARY KEY,
+		name TEXT NOT NULL,
 		value TEXT,
-		environment TEXT,
-		type TEXT,
+		environment TEXT NOT NULL,
+		type TEXT NOT NULL,
 		generator TEXT,
+		PRIMARY KEY (name, environment),
 		FOREIGN KEY(environment) REFERENCES environments(name)
 	);
 	`

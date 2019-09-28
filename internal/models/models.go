@@ -28,6 +28,7 @@ type Resource interface {
 
 type Runnable interface {
 	Run(flags uint32) error
+	RunEnv(env Environment, flags uint32) error
 }
 
 // Request
@@ -71,6 +72,10 @@ func (r *Request) Run(flags uint32) error {
 		fmt.Printf("%s", body)
 	}
 	return nil
+}
+func (r *Request) RunEnv(e Environment, flags uint32) error {
+	r.Environment = e
+	return r.Run(flags)
 }
 func (r *Request) Save() error {
 	return store.StoreRequest(r.ToStore())

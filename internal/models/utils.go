@@ -16,7 +16,6 @@ func GetAllRequests() []Request {
 	}
 	return requests
 }
-
 func GetRequestByName(name string) (Request, error) {
 	sRequest, err := store.GetRequestByName(name)
 	if err != nil {
@@ -32,6 +31,14 @@ func GetAllEnvironments() []Environment {
 		envs = append(envs, convertToEnvironment(sEnvironment))
 	}
 	return envs
+}
+func GetEnvironmentByName(name string) (Environment, error) {
+	sEnvironment, err := store.GetEnvironmentByName(name)
+	if err != nil {
+		// TODO: log error
+		return Environment{}, err
+	}
+	return convertToEnvironment(sEnvironment), nil
 }
 
 func GetAllVariables() []Variable {

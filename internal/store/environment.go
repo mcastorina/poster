@@ -20,7 +20,6 @@ func StoreEnvironments(envs []Environment) error {
 
 	return tx.Commit()
 }
-
 func StoreEnvironment(env Environment) error {
 	return StoreEnvironments([]Environment{env})
 }
@@ -32,6 +31,15 @@ func GetAllEnvironments() []Environment {
 		fmt.Printf("error: %+v\n", err)
 	}
 	return envs
+}
+func GetEnvironmentByName(name string) (Environment, error) {
+	environment := Environment{}
+	if err := globalDB.Get(&environment, "SELECT * FROM environments WHERE name=$1", name); err != nil {
+		// TODO: log error
+		fmt.Printf("error: %+v\n", err)
+		return Environment{}, ErrorEnvironmentNotFound
+	}
+	return environment, nil
 }
 
 func init() {

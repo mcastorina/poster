@@ -24,8 +24,17 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	// Check if the subcommand is found; if not, add "--" to execute the run command
+	// This is kind of a hack, but it seems to be the best solution
+	prevStringWasFlag := false
 	for i, arg := range os.Args {
-		if i == 0 || strings.HasPrefix(arg, "-") {
+		if i == 0 || strings.HasPrefix(arg, "-") || prevStringWasFlag {
+			if strings.HasPrefix(arg, "--") {
+				// --flag=value should not be marked
+				prevStringWasFlag = strings.Index(arg, "=") == -1
+			} else {
+				// -fvalue should not be marked
+				prevStringWasFlag = len(arg) == 2
+			}
 			continue
 		}
 		if _, _, err := rootCmd.Find(os.Args[i:]); err != nil {
@@ -48,7 +57,8 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
 		"config file (default is $HOME/.poster.yaml)")
-	rootCmd.Flags().BoolP("verbose", "v", false, "Print verbose output")
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Print verbose output")
+	rootCmd.Flags().StringP("env", "e", "", "Run the resources in the specified environment")
 }
 
 // initConfig reads in config file and ENV variables if set.

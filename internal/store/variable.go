@@ -27,7 +27,6 @@ func StoreVariables(variables []Variable) error {
 
 	return tx.Commit()
 }
-
 func StoreVariable(variable Variable) error {
 	return StoreVariables([]Variable{variable})
 }
@@ -40,18 +39,6 @@ func GetAllVariables() []Variable {
 	}
 	return variables
 }
-
-func GetVariableByName(name string) (Variable, error) {
-	variable := Variable{}
-	if err := globalDB.Get(&variable,
-		"SELECT * FROM variables WHERE name=$1", name); err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
-		return Variable{}, err
-	}
-	return variable, nil
-}
-
 func GetVariablesByEnvironment(environment string) []Variable {
 	variables := []Variable{}
 	if err := globalDB.Select(&variables,
@@ -60,6 +47,16 @@ func GetVariablesByEnvironment(environment string) []Variable {
 		fmt.Printf("error: %+v\n", err)
 	}
 	return variables
+}
+func GetVariableByName(name string) (Variable, error) {
+	variable := Variable{}
+	if err := globalDB.Get(&variable,
+		"SELECT * FROM variables WHERE name=$1", name); err != nil {
+		// TODO: log error
+		fmt.Printf("error: %+v\n", err)
+		return Variable{}, ErrorVariableNotFound
+	}
+	return variable, nil
 }
 
 func init() {

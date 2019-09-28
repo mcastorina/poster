@@ -26,7 +26,6 @@ func StoreRequests(requests []Request) error {
 
 	return tx.Commit()
 }
-
 func StoreRequest(request Request) error {
 	return StoreRequests([]Request{request})
 }
@@ -39,13 +38,12 @@ func GetAllRequests() []Request {
 	}
 	return requests
 }
-
 func GetRequestByName(name string) (Request, error) {
 	request := Request{}
 	if err := globalDB.Get(&request, "SELECT * FROM requests WHERE name=$1", name); err != nil {
 		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
-		return Request{}, err
+		return Request{}, ErrorRequestNotFound
 	}
 	return request, nil
 }

@@ -32,8 +32,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
-		"config file (default is $HOME/.poster.yaml)")
-	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Print verbose output")
+		"Config file (default is $HOME/.poster.yaml)")
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")
 }
 
 // initConfig reads in config file and ENV variables if set.

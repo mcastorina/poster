@@ -13,7 +13,12 @@ var createCmd = &cobra.Command{
 	Use:     "create RESOURCE",
 	Aliases: []string{"c", "add", "a"},
 	Short:   "Create a resource",
-	Long:    `Create a resource. Valid resource types: [target, request, environment]`,
+	Long: `Create a resource. Valid resource types:
+	
+    request            Method, url, and default environment to run the request
+    environment        Name of an environment for variable scope
+    const-variable     Environment dependent constant values
+`,
 }
 var createRequestCmd = &cobra.Command{
 	Use:     "request METHOD ALIAS [PATH]",
@@ -24,8 +29,8 @@ contains the following attributes:
 
     name                Name of the request for ease of use
     method              HTTP request method
-    target              The target alias
-    path                The URL path
+    url                 The URL path
+    environment         The default environment to run the request
 `,
 	Run:  createRequest,
 	Args: createRequestArgs,
@@ -46,13 +51,16 @@ var createConstVariableCmd = &cobra.Command{
 	Use:     "const-variable",
 	Aliases: []string{"const-var", "cv"},
 	Short:   "Create a constant variable resource",
-	Long: `Create const-variable will create and save a constant variable resource. A
-variable resource contains the following attributes:
+	Long: `Create const-variable will create and save a constant variable resource.
+Variables in a request are denoted by prefixing the name with a colon
+(e.g. :variable-name).
+
+A variable resource contains the following attributes:
 
     name                Name of the variable
-    value               Value of the variable
-    environment         Environment this variable belongs to
+    value               Current value of the variable
     type                Type of variable (const, request, script)
+    environment         Environment this variable belongs to
     generator           How to generate the value
 `,
 	Run:  createConstVariable,

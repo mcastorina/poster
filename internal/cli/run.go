@@ -17,6 +17,9 @@ var runCmd = &cobra.Command{
 For request types, this will send the HTTP request in the default environment,
 unless overridden with the --env flag.  For suite types, it will send all HTTP
 requests in the suite.
+
+All parts of the resource will be parsed for variables and replaced with their
+current value.
 `,
 	Run: run,
 }

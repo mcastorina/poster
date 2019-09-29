@@ -8,6 +8,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var runCmd = &cobra.Command{
+	Use:     "run RESOURCE_NAME [RESOURCE_NAME ...]",
+	Aliases: []string{"execute", "exec", "r"},
+	Short:   "Execute the named resource",
+	Long: `Run the resource.
+
+For request types, this will send the HTTP request in the default environment,
+unless overridden with the --env flag.  For suite types, it will send all HTTP
+requests in the suite.
+`,
+	Run: run,
+}
+
+func init() {
+	rootCmd.AddCommand(runCmd)
+
+	// run flags
+	runCmd.Flags().StringP("env", "e", "", "Run the resources in the specified environment")
+}
+
 func run(cmd *cobra.Command, args []string) {
 	// Override environment if set
 	env := models.Environment{}

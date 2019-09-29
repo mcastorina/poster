@@ -12,6 +12,20 @@ type Variable struct {
 	Generator   string
 }
 
+func (v *Variable) Save() error {
+	return StoreVariables([]Variable{*v})
+}
+func (v *Variable) Delete() error {
+	_, err := globalDB.Exec("DELETE FROM variables WHERE name=$1 AND environment=$2",
+		v.Name, v.Environment)
+	if err != nil {
+		// TODO: log error
+		fmt.Printf("error: %+v\n", err)
+		return ErrorVariableNotFound
+	}
+	return nil
+}
+
 func StoreVariables(variables []Variable) error {
 	if len(variables) == 0 {
 		return nil
@@ -26,9 +40,6 @@ func StoreVariables(variables []Variable) error {
 	}
 
 	return tx.Commit()
-}
-func StoreVariable(variable Variable) error {
-	return StoreVariables([]Variable{variable})
 }
 
 func GetAllVariables() []Variable {
@@ -48,10 +59,20 @@ func GetVariablesByEnvironment(environment string) []Variable {
 	}
 	return variables
 }
-func GetVariableByName(name string) (Variable, error) {
+func GetVariablesByName(name string) []Variable {
+	variables := []Variable{}
+	if err := globalDB.Select(&variables,
+		"SELECT * FROM variables WHERE name=$1", name); err != nil {
+		// TODO: log error
+		fmt.Printf("error: %+v\n", err)
+	}
+	return variables
+}
+func GetVariableByNameAndEnvironment(name, environment string) (Variable, error) {
 	variable := Variable{}
 	if err := globalDB.Get(&variable,
-		"SELECT * FROM variables WHERE name=$1", name); err != nil {
+		"SELECT * FROM variables WHERE name=$1 AND environment=$2",
+		name, environment); err != nil {
 		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
 		return Variable{}, ErrorVariableNotFound

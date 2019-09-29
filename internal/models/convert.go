@@ -2,8 +2,8 @@ package models
 
 import "github.com/mcastorina/poster/internal/store"
 
-func (r *Request) ToStore() store.Request {
-	return store.Request{
+func (r *Request) ToStore() *store.Request {
+	return &store.Request{
 		Name:        r.Name,
 		Method:      r.Method,
 		URL:         r.URL,
@@ -19,13 +19,23 @@ func convertToRequest(s store.Request) Request {
 	}
 }
 
-func (e *Environment) ToStore() store.Environment {
-	return store.Environment(*e)
+func (e *Environment) ToStore() *store.Environment {
+	sEnv := store.Environment(*e)
+	return &sEnv
 }
 func convertToEnvironment(s store.Environment) Environment {
 	return Environment(s)
 }
 
+func (v *Variable) ToStore() *store.Variable {
+	return &store.Variable{
+		Name:        v.Name,
+		Value:       v.Value,
+		Environment: v.Environment.Name,
+		Type:        v.Type,
+		Generator:   v.Generator,
+	}
+}
 func convertToVariable(s store.Variable) Variable {
 	return Variable{
 		Name:        s.Name,
@@ -33,14 +43,5 @@ func convertToVariable(s store.Variable) Variable {
 		Environment: Environment{Name: s.Environment},
 		Type:        s.Type,
 		Generator:   s.Generator,
-	}
-}
-func (v *Variable) ToStore() store.Variable {
-	return store.Variable{
-		Name:        v.Name,
-		Value:       v.Value,
-		Environment: v.Environment.Name,
-		Type:        v.Type,
-		Generator:   v.Generator,
 	}
 }

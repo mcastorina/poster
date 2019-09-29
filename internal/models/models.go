@@ -78,7 +78,10 @@ func (r *Request) RunEnv(e Environment, flags uint32) error {
 	return r.Run(flags)
 }
 func (r *Request) Save() error {
-	return store.StoreRequest(r.ToStore())
+	return r.ToStore().Save()
+}
+func (r *Request) Delete() error {
+	return r.ToStore().Delete()
 }
 
 func flagIsSet(flag, flags uint32) bool {
@@ -91,9 +94,8 @@ type Environment struct {
 }
 
 func (e *Environment) Save() error {
-	return store.StoreEnvironment(e.ToStore())
+	return e.ToStore().Save()
 }
-
 func (e *Environment) GetVariables() []Variable {
 	validVariables := []Variable{}
 	for _, variable := range store.GetVariablesByEnvironment(e.Name) {
@@ -101,7 +103,6 @@ func (e *Environment) GetVariables() []Variable {
 	}
 	return validVariables
 }
-
 func (e *Environment) ReplaceVariables(input string) string {
 	if strings.Index(input, ":") == -1 {
 		return input
@@ -140,6 +141,9 @@ func (e *Environment) ReplaceVariables(input string) string {
 
 	return output
 }
+func (e *Environment) Delete() error {
+	return e.ToStore().Delete()
+}
 
 // Variable
 type Variable struct {
@@ -151,5 +155,8 @@ type Variable struct {
 }
 
 func (v *Variable) Save() error {
-	return store.StoreVariable(v.ToStore())
+	return v.ToStore().Save()
+}
+func (v *Variable) Delete() error {
+	return v.ToStore().Delete()
 }

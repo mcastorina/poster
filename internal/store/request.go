@@ -11,6 +11,19 @@ type Request struct {
 	Environment string
 }
 
+func (r *Request) Save() error {
+	return StoreRequests([]Request{*r})
+}
+func (r *Request) Delete() error {
+	_, err := globalDB.Exec("DELETE FROM requests WHERE name=$1", r.Name)
+	if err != nil {
+		// TODO: log error
+		fmt.Printf("error: %+v\n", err)
+		return ErrorRequestNotFound
+	}
+	return nil
+}
+
 func StoreRequests(requests []Request) error {
 	if len(requests) == 0 {
 		return nil
@@ -25,9 +38,6 @@ func StoreRequests(requests []Request) error {
 	}
 
 	return tx.Commit()
-}
-func StoreRequest(request Request) error {
-	return StoreRequests([]Request{request})
 }
 
 func GetAllRequests() []Request {

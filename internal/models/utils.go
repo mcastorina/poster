@@ -48,3 +48,18 @@ func GetAllVariables() []Variable {
 	}
 	return vars
 }
+func GetVariablesByName(name string) []Variable {
+	vars := []Variable{}
+	for _, sVariable := range store.GetVariablesByName(name) {
+		vars = append(vars, convertToVariable(sVariable))
+	}
+	return vars
+}
+func GetVariableByNameAndEnvironment(name, environment string) (Variable, error) {
+	sVariable, err := store.GetVariableByNameAndEnvironment(name, environment)
+	if err != nil {
+		// TODO: log error
+		return Variable{}, err
+	}
+	return convertToVariable(sVariable), nil
+}

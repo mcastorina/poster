@@ -8,6 +8,19 @@ type Environment struct {
 	Name string
 }
 
+func (e *Environment) Save() error {
+	return StoreEnvironments([]Environment{*e})
+}
+func (e *Environment) Delete() error {
+	_, err := globalDB.Exec("DELETE FROM environments WHERE name=$1", e.Name)
+	if err != nil {
+		// TODO: log error
+		fmt.Printf("error: %+v\n", err)
+		return ErrorEnvironmentNotFound
+	}
+	return nil
+}
+
 func StoreEnvironments(envs []Environment) error {
 	if len(envs) == 0 {
 		return nil
@@ -19,9 +32,6 @@ func StoreEnvironments(envs []Environment) error {
 	}
 
 	return tx.Commit()
-}
-func StoreEnvironment(env Environment) error {
-	return StoreEnvironments([]Environment{env})
 }
 
 func GetAllEnvironments() []Environment {

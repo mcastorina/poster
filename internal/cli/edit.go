@@ -76,8 +76,8 @@ func editRequest(cmd *cobra.Command, args []string) {
 	}
 
 	request.Delete()
-	// TODO: validate input on save
 	if err := newRequest.Save(); err != nil {
+		request.Save() // Rollback changes
 		fmt.Fprintf(os.Stderr, "error: failed to update request: %+v\n", err)
 		os.Exit(1)
 	}
@@ -179,6 +179,18 @@ func updateData(data []byte) ([]byte, error) {
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		return nil, err
+	}
+
+	// Abort on empty file
+	if len(bytes) == 0 {
+		// TODO: make const, and should this be an error?
+		return nil, fmt.Errorf("empty file")
+	}
+
+	// Abort on no changes
+	if string(data) == string(bytes) {
+		// TODO: make const, and should this be an error?
+		return nil, fmt.Errorf("no changes")
 	}
 
 	return bytes, nil

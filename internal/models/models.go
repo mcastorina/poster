@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -78,10 +79,44 @@ func (r *Request) RunEnv(e Environment, flags uint32) error {
 	return r.Run(flags)
 }
 func (r *Request) Save() error {
+	if err := r.Validate(); err != nil {
+		return err
+	}
 	return r.ToStore().Save()
 }
 func (r *Request) Delete() error {
 	return r.ToStore().Delete()
+}
+func (r *Request) Validate() error {
+	// Check method is valid
+	validMethods := map[string]bool{
+		"GET":     true,
+		"HEAD":    true,
+		"POST":    true,
+		"PUT":     true,
+		"DELETE":  true,
+		"CONNECT": true,
+		"OPTIONS": true,
+		"TRACE":   true,
+	}
+	if _, ok := validMethods[strings.ToUpper(r.Method)]; !ok {
+		return ErrorInvalidMethod
+	}
+	r.Method = strings.ToUpper(r.Method)
+
+	// Check url is valid
+	if !strings.Contains(r.URL, "//") {
+		r.URL = "//" + r.URL
+	}
+	urlObj, err := url.Parse(r.URL)
+	if err != nil {
+		return err
+	}
+	if urlObj.Scheme == "" {
+		urlObj.Scheme = "http"
+	}
+	r.URL = urlObj.String()
+	return nil
 }
 
 func flagIsSet(flag, flags uint32) bool {
@@ -94,10 +129,16 @@ type Environment struct {
 }
 
 func (e *Environment) Save() error {
+	if err := e.Validate(); err != nil {
+		return ErrorInvalidEnvironment
+	}
 	return e.ToStore().Save()
 }
 func (e *Environment) Delete() error {
 	return e.ToStore().Delete()
+}
+func (e *Environment) Validate() error {
+	return nil
 }
 func (e *Environment) GetVariables() []Variable {
 	validVariables := []Variable{}
@@ -155,8 +196,24 @@ type Variable struct {
 }
 
 func (v *Variable) Save() error {
+	if err := v.Validate(); err != nil {
+		return err
+	}
 	return v.ToStore().Save()
 }
 func (v *Variable) Delete() error {
 	return v.ToStore().Delete()
+}
+func (v *Variable) Validate() error {
+	// Check type is valid
+	validTypes := map[string]bool{
+		ConstType:   true,
+		RequestType: true,
+		ScriptType:  true,
+	}
+	if _, ok := validTypes[strings.ToLower(v.Type)]; !ok {
+		return ErrorInvalidType
+	}
+	v.Type = strings.ToLower(v.Type)
+	return nil
 }

@@ -10,8 +10,9 @@ import (
 )
 
 var getCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Print resources",
+	Use:     "get RESOURCE",
+	Aliases: []string{"print", "g", "p"},
+	Short:   "Print resources",
 	Long: `Print resources.
 `,
 }

@@ -17,4 +17,5 @@ require (
 	github.com/urfave/cli v1.22.1
 	github.ibm.com/IAM/uum v0.0.0-20190927184355-9ee975de411d // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
+	gopkg.in/yaml.v2 v2.2.2
 )

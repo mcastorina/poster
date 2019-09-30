@@ -8,8 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// store.GetVariablesByEnvironment(e.Name)
-
 func TestReplaceVariablesOne(t *testing.T) {
 	defer monkey.UnpatchAll()
 	env := Environment{Name: "local"}

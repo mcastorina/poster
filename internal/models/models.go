@@ -33,10 +33,10 @@ type Runnable interface {
 
 // Request
 type Request struct {
-	Name        string
-	Method      string
-	URL         string
-	Environment Environment
+	Name        string      `yaml:"name"`
+	Method      string      `yaml:"method"`
+	URL         string      `yaml:"url"`
+	Environment Environment `yaml:"environment"`
 }
 
 func (r *Request) Run(flags uint32) error {
@@ -90,11 +90,14 @@ func flagIsSet(flag, flags uint32) bool {
 
 // Environment
 type Environment struct {
-	Name string
+	Name string `yaml:"name"`
 }
 
 func (e *Environment) Save() error {
 	return e.ToStore().Save()
+}
+func (e *Environment) Delete() error {
+	return e.ToStore().Delete()
 }
 func (e *Environment) GetVariables() []Variable {
 	validVariables := []Variable{}
@@ -141,17 +144,14 @@ func (e *Environment) ReplaceVariables(input string) string {
 
 	return output
 }
-func (e *Environment) Delete() error {
-	return e.ToStore().Delete()
-}
 
 // Variable
 type Variable struct {
-	Name        string
-	Value       string
-	Environment Environment
-	Type        string
-	Generator   string
+	Name        string      `yaml:"name"`
+	Value       string      `yaml:"value"`
+	Environment Environment `yaml:"environment"`
+	Type        string      `yaml:"type"`
+	Generator   string      `yaml:"generator"`
 }
 
 func (v *Variable) Save() error {

@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"github.com/mattn/go-sqlite3"
 )
 
 type Environment struct {
@@ -16,7 +17,16 @@ func (e *Environment) Delete() error {
 	if err != nil {
 		// TODO: log error
 		fmt.Printf("error: %+v\n", err)
-		return ErrorEnvironmentNotFound
+	}
+
+	if sqliteErr, ok := err.(sqlite3.Error); ok {
+		if sqliteErr.Code == sqlite3.ErrConstraint {
+			return ErrorEnvironmentInUse
+		} else if sqliteErr.Code == sqlite3.ErrError {
+			return ErrorEnvironmentNotFound
+		} else {
+			return ErrorUnknown
+		}
 	}
 	return nil
 }

@@ -107,7 +107,10 @@ func createEnvironment(cmd *cobra.Command, args []string) {
 	env := &models.Environment{
 		Name: args[0],
 	}
-	env.Save()
+	if err := env.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: could not save environment: %+v\n", err)
+		os.Exit(1)
+	}
 }
 func createConstVariable(cmd *cobra.Command, args []string) {
 	environment, _ := cmd.Flags().GetString("environment")
@@ -117,7 +120,10 @@ func createConstVariable(cmd *cobra.Command, args []string) {
 		Type:        models.ConstType,
 		Environment: models.Environment{Name: environment},
 	}
-	variable.Save()
+	if err := variable.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: could not save variable: %+v\n", err)
+		os.Exit(1)
+	}
 }
 
 // argument functions

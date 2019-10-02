@@ -2,6 +2,8 @@ package store
 
 import (
 	"fmt"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 type Variable struct {
@@ -33,10 +35,20 @@ func StoreVariables(variables []Variable) error {
 	tx := globalDB.MustBegin()
 
 	for _, variable := range variables {
-		tx.NamedExec(
+		if _, err := tx.NamedExec(
 			`INSERT INTO variables (name, value, environment, type, generator)
 			VALUES (:name, :value, :environment, :type, :generator)`,
-			&variable)
+			&variable); err != nil {
+
+			if sqliteErr, ok := err.(sqlite3.Error); ok {
+				if sqliteErr.Code == sqlite3.ErrConstraint {
+					return ErrorEnvironmentNotFound
+				}
+				return ErrorUnknown
+			}
+			// Should not reach
+			return err
+		}
 	}
 
 	return tx.Commit()

@@ -2,6 +2,8 @@ package store
 
 import (
 	"fmt"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 type Request struct {
@@ -32,10 +34,20 @@ func StoreRequests(requests []Request) error {
 	tx := globalDB.MustBegin()
 
 	for _, request := range requests {
-		tx.NamedExec(
+		if _, err := tx.NamedExec(
 			`INSERT INTO requests (name, method, url, environment, body)
 			VALUES (:name, :method, :url, :environment, :body)`,
-			&request)
+			&request); err != nil {
+
+			if sqliteErr, ok := err.(sqlite3.Error); ok {
+				if sqliteErr.Code == sqlite3.ErrConstraint {
+					return ErrorEnvironmentNotFound
+				}
+				return ErrorUnknown
+			}
+			// Should not reach
+			return err
+		}
 	}
 
 	return tx.Commit()

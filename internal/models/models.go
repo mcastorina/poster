@@ -38,13 +38,15 @@ type Request struct {
 	Method      string      `yaml:"method"`
 	URL         string      `yaml:"url"`
 	Environment Environment `yaml:"environment"`
+	Body        string      `yaml:"body"`
 }
 
 func (r *Request) Run(flags uint32) error {
 	method := r.Environment.ReplaceVariables(r.Method)
 	url := r.Environment.ReplaceVariables(r.URL)
+	body := r.Environment.ReplaceVariables(r.Body)
 
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(method, url, strings.NewReader(body))
 	if err != nil {
 		// TODO: log error
 		return err
@@ -75,6 +77,11 @@ func (r *Request) Run(flags uint32) error {
 	return nil
 }
 func (r *Request) RunEnv(e Environment, flags uint32) error {
+	prevEnv := r.Environment
+	defer func() {
+		r.Environment = prevEnv
+	}()
+
 	r.Environment = e
 	return r.Run(flags)
 }

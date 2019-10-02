@@ -9,6 +9,7 @@ type Request struct {
 	Method      string
 	URL         string
 	Environment string
+	Body        []byte
 }
 
 func (r *Request) Save() error {
@@ -32,8 +33,8 @@ func StoreRequests(requests []Request) error {
 
 	for _, request := range requests {
 		tx.NamedExec(
-			`INSERT INTO requests (name, method, url, environment)
-			VALUES (:name, :method, :url, :environment)`,
+			`INSERT INTO requests (name, method, url, environment, body)
+			VALUES (:name, :method, :url, :environment, :body)`,
 			&request)
 	}
 
@@ -69,6 +70,7 @@ func init() {
 		method TEXT,
 		url TEXT,
 		environment TEXT,
+		body BLOB,
 		FOREIGN KEY(environment) REFERENCES environments(name)
 	);
 	`

@@ -115,11 +115,8 @@ func editEnvironment(cmd *cobra.Command, args []string) {
 	}
 }
 func editVariable(cmd *cobra.Command, args []string) {
-	type exportedVariables struct {
-		Variables []models.Variable `yaml:"variables"`
-	}
-	variables := exportedVariables{models.GetVariablesByName(args[0])}
-	if len(variables.Variables) == 0 {
+	variables := models.GetVariablesByName(args[0])
+	if len(variables) == 0 {
 		fmt.Fprintf(os.Stderr, "error: failed to get variables: not found\n")
 		os.Exit(1)
 	}
@@ -131,23 +128,23 @@ func editVariable(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	newVariables := exportedVariables{}
+	newVariables := []models.Variable{}
 	err = yaml.Unmarshal([]byte(data), &newVariables)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: failed to update variables: %+v\n", err)
 		os.Exit(1)
 	}
 
-	for _, variable := range variables.Variables {
+	for _, variable := range variables {
 		variable.Delete()
 	}
-	for i, newVariable := range newVariables.Variables {
+	for i, newVariable := range newVariables {
 		if err := newVariable.Save(); err != nil {
 			// Rollback changes
 			for j := 0; j < i; j++ {
-				newVariables.Variables[j].Delete()
+				newVariables[j].Delete()
 			}
-			for _, variable := range variables.Variables {
+			for _, variable := range variables {
 				variable.Save()
 			}
 			fmt.Fprintf(os.Stderr, "error: failed to update variables: %+v\n", err)

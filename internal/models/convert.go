@@ -8,6 +8,7 @@ func (r *Request) ToStore() *store.Request {
 		Method:      r.Method,
 		URL:         r.URL,
 		Environment: r.Environment.Name,
+		Body:        []byte(r.Body),
 	}
 }
 func convertToRequest(s store.Request) Request {
@@ -16,6 +17,7 @@ func convertToRequest(s store.Request) Request {
 		Method:      s.Method,
 		URL:         s.URL,
 		Environment: Environment{Name: s.Environment},
+		Body:        string(s.Body),
 	}
 }
 

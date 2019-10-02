@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/mcastorina/poster/internal/models"
@@ -78,6 +79,7 @@ func init() {
 	createRequestCmd.MarkFlagRequired("name")
 	createRequestCmd.Flags().StringP("environment", "e", "", "Default environment for this request")
 	createRequestCmd.MarkFlagRequired("environment")
+	createRequestCmd.Flags().StringP("data", "d", "", "Request body")
 
 	// create const-variable flags
 	createConstVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
@@ -88,13 +90,18 @@ func init() {
 func createRequest(cmd *cobra.Command, args []string) {
 	name, _ := cmd.Flags().GetString("name")
 	environment, _ := cmd.Flags().GetString("environment")
+	body, _ := cmd.Flags().GetString("body")
 	request := &models.Request{
 		Name:        name,
 		Method:      args[0],
 		URL:         args[1],
 		Environment: models.Environment{Name: environment},
+		Body:        body,
 	}
-	request.Save()
+	if err := request.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: could not save request: %+v\n", err)
+		os.Exit(1)
+	}
 }
 func createEnvironment(cmd *cobra.Command, args []string) {
 	env := &models.Environment{

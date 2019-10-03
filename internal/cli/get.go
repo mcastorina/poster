@@ -51,15 +51,11 @@ func init() {
 
 // run functions
 func getRequest(cmd *cobra.Command, args []string) {
-	fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%s\t\n",
-		"NAME", "METHOD", "URL", "DEFAULT ENVIRONMENT", "BODY")
+	fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t\n",
+		"NAME", "METHOD", "URL", "DEFAULT ENVIRONMENT")
 	for _, request := range models.GetAllRequests() {
-		body := string(request.Body)
-		if len(body) > 20 {
-			body = body[:20] + "..."
-		}
-		fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%s\t\n", request.Name,
-			request.Method, request.URL, request.Environment.Name, body)
+		fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t\n", request.Name,
+			request.Method, request.URL, request.Environment.Name)
 	}
 	tabWriter.Flush()
 }

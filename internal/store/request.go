@@ -12,6 +12,7 @@ type Request struct {
 	URL         string
 	Environment string
 	Body        []byte
+	Headers     string // newline separated values
 }
 
 func (r *Request) Save() error {
@@ -35,8 +36,8 @@ func StoreRequests(requests []Request) error {
 
 	for _, request := range requests {
 		if _, err := tx.NamedExec(
-			`INSERT INTO requests (name, method, url, environment, body)
-			VALUES (:name, :method, :url, :environment, :body)`,
+			`INSERT INTO requests (name, method, url, environment, body, headers)
+			VALUES (:name, :method, :url, :environment, :body, :headers)`,
 			&request); err != nil {
 
 			if sqliteErr, ok := err.(sqlite3.Error); ok {
@@ -83,6 +84,7 @@ func init() {
 		url TEXT,
 		environment TEXT,
 		body BLOB,
+		headers TEXT,
 		FOREIGN KEY(environment) REFERENCES environments(name)
 	);
 	`

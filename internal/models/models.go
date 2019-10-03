@@ -32,6 +32,16 @@ type Runnable interface {
 	RunEnv(env Environment, flags uint32) error
 }
 
+// Header
+type Header struct {
+	Key   string `yaml:"key"`
+	Value string `yaml:"value"`
+}
+
+func (h *Header) String() string {
+	return fmt.Sprintf("%s: %s", h.Key, h.Value)
+}
+
 // Request
 type Request struct {
 	Name        string      `yaml:"name"`
@@ -39,6 +49,7 @@ type Request struct {
 	URL         string      `yaml:"url"`
 	Environment Environment `yaml:"environment"`
 	Body        string      `yaml:"body"`
+	Headers     []Header    `yaml:"headers"`
 }
 
 func (r *Request) Run(flags uint32) error {
@@ -46,11 +57,20 @@ func (r *Request) Run(flags uint32) error {
 	url := r.Environment.ReplaceVariables(r.URL)
 	body := r.Environment.ReplaceVariables(r.Body)
 
+	// Create request
 	req, err := http.NewRequest(method, url, strings.NewReader(body))
 	if err != nil {
 		// TODO: log error
 		return err
 	}
+	// Add headers
+	for _, header := range r.Headers {
+		key := r.Environment.ReplaceVariables(header.Key)
+		value := r.Environment.ReplaceVariables(header.Value)
+		req.Header.Add(key, value)
+	}
+
+	// Send request and get response
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		// TODO: log error

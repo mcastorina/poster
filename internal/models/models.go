@@ -1,10 +1,12 @@
 package models
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"regexp"
 	"sort"
 	"strings"
@@ -56,6 +58,14 @@ func (r *Request) Run(flags uint32) error {
 	return r.RunEnv(r.Environment, flags)
 }
 func (r *Request) RunEnv(e Environment, flags uint32) error {
+	// Generate variables
+	for _, variable := range e.GetVariables() {
+		if err := variable.GenerateValue(); err != nil {
+			// TODO: log error
+			return err
+		}
+	}
+
 	method := e.ReplaceVariables(r.Method)
 	url := e.ReplaceVariables(r.URL)
 	body := e.ReplaceVariables(r.Body)
@@ -237,4 +247,26 @@ func (v *Variable) Validate() error {
 	}
 	v.Type = strings.ToLower(v.Type)
 	return nil
+}
+func (v *Variable) GenerateValue() error {
+	switch v.Type {
+	case ConstType:
+		return nil
+	case ScriptType:
+		out, err := exec.Command("bash", "-c", v.Generator).Output()
+		if err != nil {
+			return err
+		}
+		v.Value = string(bytes.Trim(out, "\n"))
+		// TODO: This function should not have to write the result to store,
+		//       however, it is necessary at this point in order for the changes
+		//       to be used elsewhere
+		if err := v.ToStore().Update(); err != nil {
+			return err
+		}
+		return nil
+	case RequestType:
+		return fmt.Errorf("not implemented")
+	}
+	return ErrorInvalidType
 }

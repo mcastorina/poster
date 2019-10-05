@@ -27,6 +27,17 @@ func (v *Variable) Delete() error {
 	}
 	return nil
 }
+func (v *Variable) Update() error {
+	_, err := globalDB.NamedExec(
+		`UPDATE variables SET value=:value, type=:type, generator=:generator
+		WHERE name=:name AND environment=:environment`, v)
+	if err != nil {
+		// TODO: log error
+		fmt.Printf("error: %+v\n", err)
+		return err
+	}
+	return nil
+}
 
 func StoreVariables(variables []Variable) error {
 	if len(variables) == 0 {

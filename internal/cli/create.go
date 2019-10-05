@@ -22,7 +22,7 @@ var createCmd = &cobra.Command{
 `,
 }
 var createRequestCmd = &cobra.Command{
-	Use:     "request METHOD ALIAS [PATH]",
+	Use:     "request METHOD URL",
 	Aliases: []string{"req", "r"},
 	Short:   "A brief description of your command",
 	Long: `Create request will create and save a request resource. A request resource
@@ -49,7 +49,7 @@ environment resource contains the following attributes:
 	Args: createEnvironmentArgs,
 }
 var createConstVariableCmd = &cobra.Command{
-	Use:     "const-variable",
+	Use:     "const-variable NAME VALUE",
 	Aliases: []string{"const-var", "cv"},
 	Short:   "Create a constant variable resource",
 	Long: `Create const-variable will create and save a constant variable resource.
@@ -67,12 +67,32 @@ A variable resource contains the following attributes:
 	Run:  createConstVariable,
 	Args: createConstVariableArgs,
 }
+var createScriptVariableCmd = &cobra.Command{
+	Use:     "script-variable NAME GENERATOR",
+	Aliases: []string{"script-var", "sv"},
+	Short:   "Create a script variable resource",
+	Long: `Create script-variable will create and save a script variable resource.
+Variables in a request are denoted by prefixing the name with a colon
+(e.g. :variable-name).
+
+A variable resource contains the following attributes:
+
+    name                Name of the variable
+    value               Current value of the variable
+    type                Type of variable (const, request, script)
+    environment         Environment this variable belongs to
+    generator           How to generate the value
+`,
+	Run:  createScriptVariable,
+	Args: createScriptVariableArgs,
+}
 
 func init() {
 	rootCmd.AddCommand(createCmd)
 	createCmd.AddCommand(createRequestCmd)
 	createCmd.AddCommand(createEnvironmentCmd)
 	createCmd.AddCommand(createConstVariableCmd)
+	createCmd.AddCommand(createScriptVariableCmd)
 
 	// create request flags
 	createRequestCmd.Flags().StringP("name", "n", "", "Name of request for ease of use")
@@ -85,6 +105,10 @@ func init() {
 	// create const-variable flags
 	createConstVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
 	createConstVariableCmd.MarkFlagRequired("environment")
+
+	// create script-variable flags
+	createScriptVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
+	createScriptVariableCmd.MarkFlagRequired("environment")
 }
 
 // run functions
@@ -132,6 +156,23 @@ func createConstVariable(cmd *cobra.Command, args []string) {
 		Value:       args[1],
 		Type:        models.ConstType,
 		Environment: models.Environment{Name: environment},
+	}
+	if err := variable.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: could not save variable: %+v\n", err)
+		os.Exit(1)
+	}
+}
+func createScriptVariable(cmd *cobra.Command, args []string) {
+	environment, _ := cmd.Flags().GetString("environment")
+	variable := &models.Variable{
+		Name:        args[0],
+		Type:        models.ScriptType,
+		Environment: models.Environment{Name: environment},
+		Generator:   args[1],
+	}
+	if err := variable.GenerateValue(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: could not generate value: %+v\n", err)
+		os.Exit(1)
 	}
 	if err := variable.Save(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: could not save variable: %+v\n", err)
@@ -194,6 +235,12 @@ func createEnvironmentArgs(cmd *cobra.Command, args []string) error {
 func createConstVariableArgs(cmd *cobra.Command, args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("expected args missing: NAME VALUE")
+	}
+	return nil
+}
+func createScriptVariableArgs(cmd *cobra.Command, args []string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("expected args missing: NAME GENERATOR")
 	}
 	return nil
 }

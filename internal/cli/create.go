@@ -80,6 +80,7 @@ func init() {
 	createRequestCmd.Flags().StringP("environment", "e", "", "Default environment for this request")
 	createRequestCmd.MarkFlagRequired("environment")
 	createRequestCmd.Flags().StringP("data", "d", "", "Request body")
+	createRequestCmd.Flags().StringArrayP("header", "H", []string{}, "Request header")
 
 	// create const-variable flags
 	createConstVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
@@ -91,12 +92,24 @@ func createRequest(cmd *cobra.Command, args []string) {
 	name, _ := cmd.Flags().GetString("name")
 	environment, _ := cmd.Flags().GetString("environment")
 	body, _ := cmd.Flags().GetString("body")
+	rawHeaders, _ := cmd.Flags().GetStringArray("header")
+
+	headers := []models.Header{}
+	for _, rawHeader := range rawHeaders {
+		header, _ := rawHeaderToSlice(rawHeader)
+		headers = append(headers, models.Header{
+			Key:   header[0],
+			Value: header[1],
+		})
+	}
+
 	request := &models.Request{
 		Name:        name,
 		Method:      args[0],
 		URL:         args[1],
 		Environment: models.Environment{Name: environment},
 		Body:        body,
+		Headers:     headers,
 	}
 	if err := request.Save(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: could not save request: %+v\n", err)
@@ -163,6 +176,13 @@ func createRequestArgs(cmd *cobra.Command, args []string) error {
 		urlObj.Scheme = "http"
 	}
 	args[1] = urlObj.String()
+	// check headers are valid (key:value)
+	headers, _ := cmd.Flags().GetStringArray("header")
+	for _, header := range headers {
+		if _, err := rawHeaderToSlice(header); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 func createEnvironmentArgs(cmd *cobra.Command, args []string) error {
@@ -176,4 +196,27 @@ func createConstVariableArgs(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("expected args missing: NAME VALUE")
 	}
 	return nil
+}
+
+// helper functions
+func rawHeaderToSlice(header string) ([]string, error) {
+	values := strings.SplitN(header, ":", 2)
+	if len(values) != 2 {
+		// TODO: make const
+		return nil, fmt.Errorf("header should be in the format \"key:value\"")
+	}
+	key := strings.Trim(values[0], " \t")
+	value := strings.Trim(values[1], " \t")
+
+	if len(key) == 0 {
+		// TODO: make const
+		return nil, fmt.Errorf("header should be in the format \"key:value\"")
+	}
+
+	if strings.Index(header, "\n") != -1 {
+		// TODO: make const
+		return nil, fmt.Errorf("header should not contain newline characters")
+	}
+
+	return []string{key, value}, nil
 }

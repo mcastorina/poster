@@ -53,9 +53,12 @@ type Request struct {
 }
 
 func (r *Request) Run(flags uint32) error {
-	method := r.Environment.ReplaceVariables(r.Method)
-	url := r.Environment.ReplaceVariables(r.URL)
-	body := r.Environment.ReplaceVariables(r.Body)
+	return r.RunEnv(r.Environment, flags)
+}
+func (r *Request) RunEnv(e Environment, flags uint32) error {
+	method := e.ReplaceVariables(r.Method)
+	url := e.ReplaceVariables(r.URL)
+	body := e.ReplaceVariables(r.Body)
 
 	// Create request
 	req, err := http.NewRequest(method, url, strings.NewReader(body))
@@ -65,8 +68,8 @@ func (r *Request) Run(flags uint32) error {
 	}
 	// Add headers
 	for _, header := range r.Headers {
-		key := r.Environment.ReplaceVariables(header.Key)
-		value := r.Environment.ReplaceVariables(header.Value)
+		key := e.ReplaceVariables(header.Key)
+		value := e.ReplaceVariables(header.Value)
 		req.Header.Add(key, value)
 	}
 
@@ -95,15 +98,6 @@ func (r *Request) Run(flags uint32) error {
 		fmt.Printf("%s", body)
 	}
 	return nil
-}
-func (r *Request) RunEnv(e Environment, flags uint32) error {
-	prevEnv := r.Environment
-	defer func() {
-		r.Environment = prevEnv
-	}()
-
-	r.Environment = e
-	return r.Run(flags)
 }
 func (r *Request) Save() error {
 	if err := r.Validate(); err != nil {

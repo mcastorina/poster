@@ -42,6 +42,9 @@ func StoreRequests(requests []Request) error {
 
 			if sqliteErr, ok := err.(sqlite3.Error); ok {
 				if sqliteErr.Code == sqlite3.ErrConstraint {
+					if sqliteErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
+						return ErrorRequestExists
+					}
 					return ErrorEnvironmentNotFound
 				}
 				return ErrorUnknown

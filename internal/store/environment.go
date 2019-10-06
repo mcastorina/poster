@@ -39,7 +39,17 @@ func StoreEnvironments(envs []Environment) error {
 	tx := globalDB.MustBegin()
 
 	for _, env := range envs {
-		tx.NamedExec("INSERT INTO environments (name) VALUES (:name)", &env)
+		if _, err := tx.NamedExec(
+			"INSERT INTO environments (name) VALUES (:name)",
+			&env); err != nil {
+
+			if sqliteErr, ok := err.(sqlite3.Error); ok {
+				if sqliteErr.Code == sqlite3.ErrConstraint {
+					return ErrorEnvironmentExists
+				}
+				return ErrorUnknown
+			}
+		}
 	}
 
 	return tx.Commit()

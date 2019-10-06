@@ -53,6 +53,7 @@ func StoreVariables(variables []Variable) error {
 
 			if sqliteErr, ok := err.(sqlite3.Error); ok {
 				if sqliteErr.Code == sqlite3.ErrConstraint {
+					// TODO: This could be name conflict as well
 					return ErrorEnvironmentNotFound
 				}
 				return ErrorUnknown

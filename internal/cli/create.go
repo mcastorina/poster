@@ -8,6 +8,8 @@ import (
 
 	"github.com/mcastorina/poster/internal/models"
 	"github.com/spf13/cobra"
+	flag "github.com/spf13/pflag"
+	"gopkg.in/yaml.v2"
 )
 
 var createCmd = &cobra.Command{
@@ -94,25 +96,28 @@ func init() {
 	createCmd.AddCommand(createConstVariableCmd)
 	createCmd.AddCommand(createScriptVariableCmd)
 
+	// create flags
+	createCmd.PersistentFlags().BoolP("interactive", "i", false, "Interactively create the resource")
+
 	// create request flags
 	createRequestCmd.Flags().StringP("name", "n", "", "Name of request for ease of use")
-	createRequestCmd.MarkFlagRequired("name")
 	createRequestCmd.Flags().StringP("environment", "e", "", "Default environment for this request")
-	createRequestCmd.MarkFlagRequired("environment")
 	createRequestCmd.Flags().StringP("data", "d", "", "Request body")
 	createRequestCmd.Flags().StringArrayP("header", "H", []string{}, "Request header")
 
 	// create const-variable flags
 	createConstVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
-	createConstVariableCmd.MarkFlagRequired("environment")
 
 	// create script-variable flags
 	createScriptVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
-	createScriptVariableCmd.MarkFlagRequired("environment")
 }
 
 // run functions
 func createRequest(cmd *cobra.Command, args []string) {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		createRequestI(cmd, args)
+		return
+	}
 	name, _ := cmd.Flags().GetString("name")
 	environment, _ := cmd.Flags().GetString("environment")
 	body, _ := cmd.Flags().GetString("body")
@@ -141,6 +146,10 @@ func createRequest(cmd *cobra.Command, args []string) {
 	}
 }
 func createEnvironment(cmd *cobra.Command, args []string) {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		createEnvironmentI(cmd, args)
+		return
+	}
 	env := &models.Environment{
 		Name: args[0],
 	}
@@ -150,6 +159,10 @@ func createEnvironment(cmd *cobra.Command, args []string) {
 	}
 }
 func createConstVariable(cmd *cobra.Command, args []string) {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		createConstVariableI(cmd, args)
+		return
+	}
 	environment, _ := cmd.Flags().GetString("environment")
 	variable := &models.Variable{
 		Name:        args[0],
@@ -163,6 +176,10 @@ func createConstVariable(cmd *cobra.Command, args []string) {
 	}
 }
 func createScriptVariable(cmd *cobra.Command, args []string) {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		createScriptVariableI(cmd, args)
+		return
+	}
 	environment, _ := cmd.Flags().GetString("environment")
 	variable := &models.Variable{
 		Name:        args[0],
@@ -182,8 +199,14 @@ func createScriptVariable(cmd *cobra.Command, args []string) {
 
 // argument functions
 func createRequestArgs(cmd *cobra.Command, args []string) error {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		return nil
+	}
 	if len(args) != 2 {
 		return fmt.Errorf("expected args missing: METHOD URL")
+	}
+	if !flagsAreSet(cmd, "name", "environment") {
+		return fmt.Errorf("expected flags missing: --name, --environment")
 	}
 	// check method is valid
 	validMethods := map[string]bool{
@@ -227,20 +250,36 @@ func createRequestArgs(cmd *cobra.Command, args []string) error {
 	return nil
 }
 func createEnvironmentArgs(cmd *cobra.Command, args []string) error {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		return nil
+	}
 	if len(args) != 1 {
 		return fmt.Errorf("expected args missing: NAME")
 	}
 	return nil
 }
 func createConstVariableArgs(cmd *cobra.Command, args []string) error {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		return nil
+	}
 	if len(args) != 2 {
 		return fmt.Errorf("expected args missing: NAME VALUE")
+	}
+	if !flagsAreSet(cmd, "environment") {
+		return fmt.Errorf("expected flag missing: --environment")
 	}
 	return nil
 }
 func createScriptVariableArgs(cmd *cobra.Command, args []string) error {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		return nil
+	}
 	if len(args) != 2 {
 		return fmt.Errorf("expected args missing: NAME GENERATOR")
+	}
+	if !flagsAreSet(cmd, "environment") {
+		// TODO: make const
+		return fmt.Errorf("expected flag missing: --environment")
 	}
 	return nil
 }
@@ -266,4 +305,118 @@ func rawHeaderToSlice(header string) ([]string, error) {
 	}
 
 	return []string{key, value}, nil
+}
+func createRequestI(cmd *cobra.Command, args []string) {
+	// TODO: move this to models
+	template := models.Request{
+		Name:        "request template",
+		Method:      "GET",
+		URL:         "http://localhost",
+		Environment: models.Environment{Name: "local"},
+		Headers: []models.Header{
+			{Key: "Content-Type", Value: "application/json"},
+		},
+	}
+	var err error
+	data, _ := yaml.Marshal(template)
+	data, err = updateData(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create request: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create request: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := template.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create request: %+v\n", err)
+		os.Exit(1)
+	}
+}
+func createEnvironmentI(cmd *cobra.Command, args []string) {
+	// TODO: move this to models
+	template := models.Environment{
+		Name: "environment template",
+	}
+	var err error
+	data, _ := yaml.Marshal(template)
+	data, err = updateData(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create environment: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create environment: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := template.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create environment: %+v\n", err)
+		os.Exit(1)
+	}
+}
+func createConstVariableI(cmd *cobra.Command, args []string) {
+	// TODO: move this to models
+	template := models.Variable{
+		Name:        "const variable template",
+		Value:       "value",
+		Environment: models.Environment{Name: "local"},
+		Type:        models.ConstType,
+	}
+	var err error
+	data, _ := yaml.Marshal(template)
+	data, err = updateData(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := template.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		os.Exit(1)
+	}
+}
+func createScriptVariableI(cmd *cobra.Command, args []string) {
+	// TODO: move this to models
+	template := models.Variable{
+		Name:        "script variable template",
+		Environment: models.Environment{Name: "local"},
+		Type:        models.ScriptType,
+		Generator:   `date +'%D %T'`,
+	}
+	var err error
+	data, _ := yaml.Marshal(template)
+	data, err = updateData(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := template.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		os.Exit(1)
+	}
+}
+func flagsAreSet(cmd *cobra.Command, flagNames ...string) bool {
+	if len(flagNames) == 0 {
+		return true
+	}
+
+	flagsAreSet := true
+	flagMap := make(map[string]bool)
+	for _, flagName := range flagNames {
+		flagMap[flagName] = true
+	}
+
+	cmd.Flags().VisitAll(func(pflag *flag.Flag) {
+		if _, ok := flagMap[pflag.Name]; ok && !pflag.Changed {
+			flagsAreSet = false
+		}
+	})
+	return flagsAreSet
 }

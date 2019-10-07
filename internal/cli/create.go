@@ -88,6 +88,25 @@ A variable resource contains the following attributes:
 	Run:  createScriptVariable,
 	Args: createScriptVariableArgs,
 }
+var createRequestVariableCmd = &cobra.Command{
+	Use:     "request-variable NAME REQUEST",
+	Aliases: []string{"request-var", "req-variable", "req-var", "rv"},
+	Short:   "Create a request variable resource",
+	Long: `Create request-variable will create and save a request variable resource.
+Variables in a request are denoted by prefixing the name with a colon
+(e.g. :variable-name).
+
+A variable resource contains the following attributes:
+
+    name                Name of the variable
+    value               Current value of the variable
+    type                Type of variable (const, request, script)
+    environment         Environment this variable belongs to
+    generator           How to generate the value
+`,
+	Run:  createRequestVariable,
+	Args: createRequestVariableArgs,
+}
 
 func init() {
 	rootCmd.AddCommand(createCmd)
@@ -95,6 +114,7 @@ func init() {
 	createCmd.AddCommand(createEnvironmentCmd)
 	createCmd.AddCommand(createConstVariableCmd)
 	createCmd.AddCommand(createScriptVariableCmd)
+	createCmd.AddCommand(createRequestVariableCmd)
 
 	// create flags
 	createCmd.PersistentFlags().BoolP("interactive", "i", false, "Interactively create the resource")
@@ -110,6 +130,10 @@ func init() {
 
 	// create script-variable flags
 	createScriptVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
+
+	// create request-variable flags
+	createRequestVariableCmd.Flags().StringP("environment", "e", "", "Environment to store variable in")
+	createRequestVariableCmd.Flags().StringP("jsonpath", "j", "", "JSONPath to extract the value from the result body")
 }
 
 // run functions
@@ -185,11 +209,30 @@ func createScriptVariable(cmd *cobra.Command, args []string) {
 		Name:        args[0],
 		Type:        models.ScriptType,
 		Environment: models.Environment{Name: environment},
-		Generator:   args[1],
+		Generator: &models.VariableGenerator{
+			Script: args[1],
+		},
 	}
-	if err := variable.GenerateValue(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not generate value: %+v\n", err)
+	if err := variable.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: could not save variable: %+v\n", err)
 		os.Exit(1)
+	}
+}
+func createRequestVariable(cmd *cobra.Command, args []string) {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		createRequestVariableI(cmd, args)
+		return
+	}
+	environment, _ := cmd.Flags().GetString("environment")
+	jPath, _ := cmd.Flags().GetString("jsonpath")
+	variable := &models.Variable{
+		Name:        args[0],
+		Type:        models.RequestType,
+		Environment: models.Environment{Name: environment},
+		Generator: &models.VariableGenerator{
+			RequestName: args[1],
+			RequestPath: jPath,
+		},
 	}
 	if err := variable.Save(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: could not save variable: %+v\n", err)
@@ -276,6 +319,19 @@ func createScriptVariableArgs(cmd *cobra.Command, args []string) error {
 	}
 	if len(args) != 2 {
 		return fmt.Errorf("expected args missing: NAME GENERATOR")
+	}
+	if !flagsAreSet(cmd, "environment") {
+		// TODO: make const
+		return fmt.Errorf("expected flag missing: --environment")
+	}
+	return nil
+}
+func createRequestVariableArgs(cmd *cobra.Command, args []string) error {
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		return nil
+	}
+	if len(args) != 2 {
+		return fmt.Errorf("expected args missing: NAME REQUEST")
 	}
 	if !flagsAreSet(cmd, "environment") {
 		// TODO: make const
@@ -384,7 +440,36 @@ func createScriptVariableI(cmd *cobra.Command, args []string) {
 		Name:        "script variable template",
 		Environment: models.Environment{Name: "local"},
 		Type:        models.ScriptType,
-		Generator:   `date +'%D %T'`,
+		Generator: &models.VariableGenerator{
+			Script: `date +'%D %T'`,
+		},
+	}
+	var err error
+	data, _ := yaml.Marshal(template)
+	data, err = updateData(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		os.Exit(1)
+	}
+	if err := template.Save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		os.Exit(1)
+	}
+}
+func createRequestVariableI(cmd *cobra.Command, args []string) {
+	// TODO: move this to models
+	template := models.Variable{
+		Name:        "request variable template",
+		Environment: models.Environment{Name: "local"},
+		Type:        models.RequestType,
+		Generator: &models.VariableGenerator{
+			RequestName: "request-name",
+			RequestPath: "$",
+		},
 	}
 	var err error
 	data, _ := yaml.Marshal(template)

@@ -12,9 +12,11 @@ require (
 	github.com/mattn/go-sqlite3 v1.11.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/cli v1.22.1
+	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0
 	github.ibm.com/IAM/uum v0.0.0-20190927184355-9ee975de411d // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.2.2

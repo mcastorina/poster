@@ -2,7 +2,10 @@ package cli
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/mcastorina/poster/internal/models"
 	"github.com/spf13/cobra"
@@ -43,25 +46,54 @@ func run(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	flags := models.FlagPrintResponseCode
-	if printHeaders, _ := cmd.Flags().GetBool("verbose"); printHeaders {
-		flags |= models.FlagPrintHeaders
-		flags |= models.FlagPrintBody
-	}
+	verboseFlag, _ := cmd.Flags().GetBool("verbose")
 
 	for _, arg := range args {
-		if resource, err := models.GetRunnableResourceByName(arg); err == nil {
-			if env.Name == "" {
-				// Use default environment
-				err = resource.Run(flags)
-			} else {
-				// Override environment
-				err = resource.RunEnv(env, flags)
-			}
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "error: %+v\n", err)
-				os.Exit(1)
-			}
+		resource, err := models.GetRunnableResourceByName(arg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "eror: could not run %s: %+v\n", arg, err)
+			os.Exit(1)
 		}
+
+		var resp *http.Response
+		if env.Name == "" {
+			// Use default environment
+			resp, err = resource.Run()
+		} else {
+			// Override environment
+			resp, err = resource.RunEnv(env)
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: could not run %s: %+v\n", arg, err)
+			os.Exit(1)
+		}
+
+		printResponse(resp, verboseFlag)
 	}
+}
+
+// helper functions
+func printResponse(resp *http.Response, verbose bool) error {
+	// print response code
+	fmt.Printf("%s %s\n", resp.Proto, resp.Status)
+
+	// print headers
+	if verbose {
+		for header, values := range resp.Header {
+			fmt.Printf("%s: %s\n", header, strings.Join(values, ","))
+		}
+		fmt.Println()
+	}
+
+	// print body
+	if verbose {
+		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s", body)
+	}
+
+	return nil
 }

@@ -2,6 +2,7 @@ package models
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,13 +13,10 @@ import (
 	"strings"
 
 	"github.com/mcastorina/poster/internal/store"
+	"github.com/yalp/jsonpath"
 )
 
 const (
-	FlagPrintResponseCode = uint32(0x1 << 0)
-	FlagPrintHeaders      = uint32(0x1 << 1)
-	FlagPrintBody         = uint32(0x1 << 2)
-
 	ConstType   = "const"
 	RequestType = "request"
 	ScriptType  = "script"
@@ -30,8 +28,8 @@ type Resource interface {
 }
 
 type Runnable interface {
-	Run(flags uint32) error
-	RunEnv(env Environment, flags uint32) error
+	Run() (*http.Response, error)
+	RunEnv(env Environment) (*http.Response, error)
 }
 
 // Header
@@ -54,15 +52,22 @@ type Request struct {
 	Headers     []Header    `yaml:"headers"`
 }
 
-func (r *Request) Run(flags uint32) error {
-	return r.RunEnv(r.Environment, flags)
+// TODO: These private functions are for request variables
+//       to avoid infinite loops.
+//       Adding a lastGenerated attribute may solve this.
+func (r *Request) run() (*http.Response, error) {
+	return r.runEnv(r.Environment)
 }
-func (r *Request) RunEnv(e Environment, flags uint32) error {
+func (r *Request) runEnv(e Environment) (*http.Response, error) {
 	// Generate variables
 	for _, variable := range e.GetVariables() {
+		// Skip request variables to avoid infinite loop
+		if variable.Type == RequestType {
+			continue
+		}
 		if err := variable.GenerateValue(); err != nil {
 			// TODO: log error
-			return err
+			return nil, err
 		}
 	}
 
@@ -74,7 +79,7 @@ func (r *Request) RunEnv(e Environment, flags uint32) error {
 	req, err := http.NewRequest(method, url, strings.NewReader(body))
 	if err != nil {
 		// TODO: log error
-		return err
+		return nil, err
 	}
 	// Add headers
 	for _, header := range r.Headers {
@@ -87,27 +92,47 @@ func (r *Request) RunEnv(e Environment, flags uint32) error {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		// TODO: log error
-		return err
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r *Request) Run() (*http.Response, error) {
+	return r.RunEnv(r.Environment)
+}
+func (r *Request) RunEnv(e Environment) (*http.Response, error) {
+	// Generate variables
+	for _, variable := range e.GetVariables() {
+		if err := variable.GenerateValue(); err != nil {
+			// TODO: log error
+			return nil, err
+		}
 	}
 
-	if flagIsSet(FlagPrintResponseCode, flags) {
-		fmt.Printf("%s %s\n", resp.Proto, resp.Status)
+	method := e.ReplaceVariables(r.Method)
+	url := e.ReplaceVariables(r.URL)
+	body := e.ReplaceVariables(r.Body)
+
+	// Create request
+	req, err := http.NewRequest(method, url, strings.NewReader(body))
+	if err != nil {
+		// TODO: log error
+		return nil, err
 	}
-	if flagIsSet(FlagPrintHeaders, flags) {
-		for header, values := range resp.Header {
-			fmt.Printf("%s: %s\n", header, strings.Join(values, ","))
-		}
-		fmt.Println()
+	// Add headers
+	for _, header := range r.Headers {
+		key := e.ReplaceVariables(header.Key)
+		value := e.ReplaceVariables(header.Value)
+		req.Header.Add(key, value)
 	}
-	if flagIsSet(FlagPrintBody, flags) {
-		body, err := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s", body)
+
+	// Send request and get response
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		// TODO: log error
+		return nil, err
 	}
-	return nil
+	return resp, nil
 }
 func (r *Request) Save() error {
 	if err := r.Validate(); err != nil {
@@ -148,10 +173,6 @@ func (r *Request) Validate() error {
 	}
 	r.URL = urlObj.String()
 	return nil
-}
-
-func flagIsSet(flag, flags uint32) bool {
-	return flag&flags != 0
 }
 
 // Environment
@@ -219,11 +240,17 @@ func (e *Environment) ReplaceVariables(input string) string {
 
 // Variable
 type Variable struct {
-	Name        string      `yaml:"name"`
-	Value       string      `yaml:"value"`
-	Environment Environment `yaml:"environment"`
-	Type        string      `yaml:"type"`
-	Generator   string      `yaml:"generator"`
+	Name        string             `yaml:"name"`
+	Value       string             `yaml:"value"`
+	Environment Environment        `yaml:"environment"`
+	Type        string             `yaml:"type"`
+	Generator   *VariableGenerator `yaml:"generator,omitempty"`
+}
+
+type VariableGenerator struct {
+	RequestName string `yaml:"request-name,omitempty"`
+	RequestPath string `yaml:"request-path,omitempty"`
+	Script      string `yaml:"script,omitempty"`
 }
 
 func (v *Variable) Save() error {
@@ -253,7 +280,7 @@ func (v *Variable) GenerateValue() error {
 	case ConstType:
 		return nil
 	case ScriptType:
-		out, err := exec.Command("bash", "-c", v.Generator).Output()
+		out, err := exec.Command("bash", "-c", v.Generator.Script).Output()
 		if err != nil {
 			return err
 		}
@@ -266,7 +293,47 @@ func (v *Variable) GenerateValue() error {
 		}
 		return nil
 	case RequestType:
-		return fmt.Errorf("not implemented")
+		req, err := GetRequestByName(v.Generator.RequestName)
+		if err != nil {
+			return err
+		}
+		// TODO: add runenv option
+		resp, err := req.run()
+		if err != nil {
+			return err
+		}
+		// read body
+		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return err
+		}
+
+		// assign to variable
+		if v.Generator.RequestPath == "" {
+			v.Value = string(bytes.Trim(body, "\n"))
+		} else {
+			var jBody interface{}
+			if err := json.Unmarshal(body, &jBody); err != nil {
+				return nil
+			}
+			val, err := jsonpath.Read(jBody, v.Generator.RequestPath)
+			if err != nil {
+				return err
+			}
+			if value, ok := val.(string); !ok {
+				return fmt.Errorf("the JSONPath points to a non-string value: %+v\n", val)
+			} else {
+				v.Value = value
+			}
+		}
+		// TODO: This function should not have to write the result to store,
+		//       however, it is necessary at this point in order for the changes
+		//       to be used elsewhere
+		if err := v.ToStore().Update(); err != nil {
+			return err
+		}
+		return nil
 	}
 	return ErrorInvalidType
 }

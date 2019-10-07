@@ -1,7 +1,11 @@
 package models
 
-import "github.com/mcastorina/poster/internal/store"
-import "strings"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/mcastorina/poster/internal/store"
+)
 
 func (r *Request) ToStore() *store.Request {
 	headerStrings := []string{}
@@ -46,20 +50,39 @@ func convertToEnvironment(s store.Environment) Environment {
 }
 
 func (v *Variable) ToStore() *store.Variable {
+	generator := ""
+	switch v.Type {
+	case ScriptType:
+		generator = v.Generator.Script
+	case RequestType:
+		generator = fmt.Sprintf("%s:%s", v.Generator.RequestName, v.Generator.RequestPath)
+	}
 	return &store.Variable{
 		Name:        v.Name,
 		Value:       v.Value,
 		Environment: v.Environment.Name,
 		Type:        v.Type,
-		Generator:   v.Generator,
+		Generator:   generator,
 	}
 }
 func convertToVariable(s store.Variable) Variable {
-	return Variable{
+	variable := Variable{
 		Name:        s.Name,
 		Value:       s.Value,
 		Environment: Environment{Name: s.Environment},
 		Type:        s.Type,
-		Generator:   s.Generator,
 	}
+	generator := &VariableGenerator{}
+	switch variable.Type {
+	case ScriptType:
+		generator.Script = s.Generator
+	case RequestType:
+		namePath := strings.SplitN(s.Generator, ":", 2)
+		generator.RequestName = namePath[0]
+		generator.RequestPath = namePath[1]
+	case ConstType:
+		generator = nil
+	}
+	variable.Generator = generator
+	return variable
 }

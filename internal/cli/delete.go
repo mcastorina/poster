@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/mcastorina/poster/internal/models"
@@ -52,11 +51,11 @@ func deleteRequest(cmd *cobra.Command, args []string) {
 	for _, request := range args {
 		mReq, err := models.GetRequestByName(request)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: failed to delete %s: %+v\n", request, err)
+			log.Errorf("Failed to delete %s: %+v\n", request, err)
 			os.Exit(1)
 		}
 		if err := mReq.Delete(); err != nil {
-			fmt.Fprintf(os.Stderr, "error: failed to delete %s: %+v\n", request, err)
+			log.Errorf("Failed to delete %s: %+v\n", request, err)
 			os.Exit(1)
 		}
 	}
@@ -65,11 +64,11 @@ func deleteEnvironment(cmd *cobra.Command, args []string) {
 	for _, environment := range args {
 		mEnv, err := models.GetEnvironmentByName(environment)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: failed to delete %s: %+v\n", environment, err)
+			log.Errorf("Failed to delete %s: %+v\n", environment, err)
 			os.Exit(1)
 		}
 		if err := mEnv.Delete(); err != nil {
-			fmt.Fprintf(os.Stderr, "error: failed to delete %s: %+v\n", environment, err)
+			log.Errorf("Failed to delete %s: %+v\n", environment, err)
 			os.Exit(1)
 		}
 	}
@@ -78,7 +77,7 @@ func deleteVariable(cmd *cobra.Command, args []string) {
 	for _, arg := range args {
 		for _, variable := range models.GetVariablesByName(arg) {
 			if err := variable.Delete(); err != nil {
-				fmt.Fprintf(os.Stderr, "error: failed to delete %s: %+v\n", variable, err)
+				log.Errorf("Failed to delete %s: %+v\n", variable, err)
 				os.Exit(1)
 			}
 		}

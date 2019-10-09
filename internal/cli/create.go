@@ -165,7 +165,7 @@ func createRequest(cmd *cobra.Command, args []string) {
 		Headers:     headers,
 	}
 	if err := request.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not save request: %+v\n", err)
+		log.Errorf("Could not save request: %+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -178,7 +178,7 @@ func createEnvironment(cmd *cobra.Command, args []string) {
 		Name: args[0],
 	}
 	if err := env.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not save environment: %+v\n", err)
+		log.Errorf("Could not save environment: %+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -195,7 +195,7 @@ func createConstVariable(cmd *cobra.Command, args []string) {
 		Environment: models.Environment{Name: environment},
 	}
 	if err := variable.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not save variable: %+v\n", err)
+		log.Errorf("Could not save variable: %+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -214,7 +214,7 @@ func createScriptVariable(cmd *cobra.Command, args []string) {
 		},
 	}
 	if err := variable.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not save variable: %+v\n", err)
+		log.Errorf("Could not save variable: %+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -235,7 +235,7 @@ func createRequestVariable(cmd *cobra.Command, args []string) {
 		},
 	}
 	if err := variable.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not save variable: %+v\n", err)
+		log.Errorf("Could not save variable: %+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -377,15 +377,15 @@ func createRequestI(cmd *cobra.Command, args []string) {
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create request: %+v\n", err)
+		log.Errorf("Failed to create request: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create request: %+v\n", err)
+		log.Errorf("Failed to create request: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := template.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create request: %+v\n", err)
+		log.Errorf("Failed to create request: %+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -398,15 +398,15 @@ func createEnvironmentI(cmd *cobra.Command, args []string) {
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create environment: %+v\n", err)
+		log.Errorf("Failed to create environment: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create environment: %+v\n", err)
+		log.Errorf("Failed to create environment: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := template.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create environment: %+v\n", err)
+		log.Errorf("Failed to create environment: %+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -422,15 +422,15 @@ func createConstVariableI(cmd *cobra.Command, args []string) {
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		log.Errorf("Failed to create variable: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		log.Errorf("Failed to create variable: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := template.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		log.Errorf("Failed to create variable: %+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -448,15 +448,15 @@ func createScriptVariableI(cmd *cobra.Command, args []string) {
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		log.Errorf("Failed to create variable: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		log.Errorf("Failed to create variable: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := template.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		log.Errorf("Failed to create variable: %+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -475,15 +475,15 @@ func createRequestVariableI(cmd *cobra.Command, args []string) {
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		log.Errorf("Failed to create variable: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := yaml.Unmarshal([]byte(data), &template); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		log.Errorf("Failed to create variable: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := template.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to create variable: %+v\n", err)
+		log.Errorf("Failed to create variable: %+v\n", err)
 		os.Exit(1)
 	}
 }

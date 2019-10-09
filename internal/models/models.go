@@ -66,7 +66,7 @@ func (r *Request) runEnv(e Environment) (*http.Response, error) {
 			continue
 		}
 		if err := variable.GenerateValue(); err != nil {
-			// TODO: log error
+			log.Errorf("%+v\n", err)
 			return nil, err
 		}
 	}
@@ -78,7 +78,7 @@ func (r *Request) runEnv(e Environment) (*http.Response, error) {
 	// Create request
 	req, err := http.NewRequest(method, url, strings.NewReader(body))
 	if err != nil {
-		// TODO: log error
+		log.Errorf("%+v\n", err)
 		return nil, err
 	}
 	// Add headers
@@ -91,7 +91,7 @@ func (r *Request) runEnv(e Environment) (*http.Response, error) {
 	// Send request and get response
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		// TODO: log error
+		log.Errorf("%+v\n", err)
 		return nil, err
 	}
 	return resp, nil
@@ -104,8 +104,8 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 	// Generate variables
 	for _, variable := range e.GetVariables() {
 		if err := variable.GenerateValue(); err != nil {
-			// TODO: log error
-			return nil, err
+			log.Errorf("%+v\n", err)
+			return nil, ErrorGenerateVariableFailed
 		}
 	}
 
@@ -116,8 +116,8 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 	// Create request
 	req, err := http.NewRequest(method, url, strings.NewReader(body))
 	if err != nil {
-		// TODO: log error
-		return nil, err
+		log.Errorf("%+v\n", err)
+		return nil, ErrorCreateRequestFailed
 	}
 	// Add headers
 	for _, header := range r.Headers {
@@ -129,8 +129,8 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 	// Send request and get response
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		// TODO: log error
-		return nil, err
+		log.Errorf("%+v\n", err)
+		return nil, ErrorRequestFailed
 	}
 	return resp, nil
 }

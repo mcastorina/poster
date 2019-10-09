@@ -57,59 +57,59 @@ func init() {
 func editRequest(cmd *cobra.Command, args []string) {
 	request, err := models.GetRequestByName(args[0])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to get request: %+v\n", err)
+		log.Errorf("Failed to get request: %+v\n", err)
 		os.Exit(1)
 	}
 
 	data, _ := yaml.Marshal(request)
 	data, err = updateData(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to update request: %+v\n", err)
+		log.Errorf("Failed to update request: %+v\n", err)
 		os.Exit(1)
 	}
 
 	newRequest := models.Request{}
 	err = yaml.Unmarshal([]byte(data), &newRequest)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to update request: %+v\n", err)
+		log.Errorf("Failed to update request: %+v\n", err)
 		os.Exit(1)
 	}
 
 	request.Delete()
 	if err := newRequest.Save(); err != nil {
 		request.Save() // Rollback changes
-		fmt.Fprintf(os.Stderr, "error: failed to update request: %+v\n", err)
+		log.Errorf("Failed to update request: %+v\n", err)
 		os.Exit(1)
 	}
 }
 func editEnvironment(cmd *cobra.Command, args []string) {
 	environment, err := models.GetEnvironmentByName(args[0])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to get environment: %+v\n", err)
+		log.Errorf("Failed to get environment: %+v\n", err)
 		os.Exit(1)
 	}
 
 	data, _ := yaml.Marshal(environment)
 	data, err = updateData(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to update environment: %+v\n", err)
+		log.Errorf("Failed to update environment: %+v\n", err)
 		os.Exit(1)
 	}
 
 	newEnvironment := models.Environment{}
 	err = yaml.Unmarshal([]byte(data), &newEnvironment)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to update environment: %+v\n", err)
+		log.Errorf("Failed to update environment: %+v\n", err)
 		os.Exit(1)
 	}
 
 	// This can fail due to foreign key constraint
 	if err := environment.Delete(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to update environment: %+v\n", err)
+		log.Errorf("Failed to update environment: %+v\n", err)
 		os.Exit(1)
 	}
 	if err := newEnvironment.Save(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to update environment: %+v\n", err)
+		log.Errorf("Failed to update environment: %+v\n", err)
 		environment.Save() // Rollback changes
 		os.Exit(1)
 	}
@@ -117,21 +117,21 @@ func editEnvironment(cmd *cobra.Command, args []string) {
 func editVariable(cmd *cobra.Command, args []string) {
 	variables := models.GetVariablesByName(args[0])
 	if len(variables) == 0 {
-		fmt.Fprintf(os.Stderr, "error: failed to get variables: not found\n")
+		log.Errorf("Failed to get variables: not found\n")
 		os.Exit(1)
 	}
 	var err error
 	data, _ := yaml.Marshal(variables)
 	data, err = updateData(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to update variables: %+v\n", err)
+		log.Errorf("Failed to update variables: %+v\n", err)
 		os.Exit(1)
 	}
 
 	newVariables := []models.Variable{}
 	err = yaml.Unmarshal([]byte(data), &newVariables)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to update variables: %+v\n", err)
+		log.Errorf("Failed to update variables: %+v\n", err)
 		os.Exit(1)
 	}
 
@@ -147,7 +147,7 @@ func editVariable(cmd *cobra.Command, args []string) {
 			for _, variable := range variables {
 				variable.Save()
 			}
-			fmt.Fprintf(os.Stderr, "error: failed to update variables: %+v\n", err)
+			log.Errorf("Failed to update variables: %+v\n", err)
 			os.Exit(1)
 		}
 	}
@@ -196,20 +196,20 @@ func createTmpFile(data []byte) (string, error) {
 	// Create temporary file
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "poster-edit-")
 	if err != nil {
-		// TODO: log error
+		log.Errorf("%+v\n", err)
 		return "", err
 	}
 
 	// Write to the file
 	if _, err = tmpFile.Write(data); err != nil {
-		// TODO: log error
+		log.Errorf("%+v\n", err)
 		os.Remove(tmpFile.Name())
 		return "", err
 	}
 
 	// Close the file
 	if err := tmpFile.Close(); err != nil {
-		// TODO: log error
+		log.Errorf("%+v\n", err)
 		os.Remove(tmpFile.Name())
 		return "", err
 	}

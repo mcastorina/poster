@@ -41,7 +41,7 @@ func run(cmd *cobra.Command, args []string) {
 	if e != "" {
 		env, err = models.GetEnvironmentByName(e)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %+v\n", err)
+			log.Errorf("%+v\n", err)
 			os.Exit(1)
 		}
 	}
@@ -64,7 +64,7 @@ func run(cmd *cobra.Command, args []string) {
 			resp, err = resource.RunEnv(env)
 		}
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: could not run %s: %+v\n", arg, err)
+			log.Errorf("Could not run %s: %+v\n", arg, err)
 			os.Exit(1)
 		}
 

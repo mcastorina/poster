@@ -1,8 +1,6 @@
 package store
 
 import (
-	"fmt"
-
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -16,8 +14,7 @@ func (e *Environment) Save() error {
 func (e *Environment) Delete() error {
 	_, err := globalDB.Exec("DELETE FROM environments WHERE name=$1", e.Name)
 	if err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
+		log.Errorf("%+v\n", err)
 	}
 
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
@@ -58,16 +55,14 @@ func StoreEnvironments(envs []Environment) error {
 func GetAllEnvironments() []Environment {
 	envs := []Environment{}
 	if err := globalDB.Select(&envs, "SELECT * FROM environments"); err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
+		log.Errorf("%+v\n", err)
 	}
 	return envs
 }
 func GetEnvironmentByName(name string) (Environment, error) {
 	environment := Environment{}
 	if err := globalDB.Get(&environment, "SELECT * FROM environments WHERE name=$1", name); err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
+		log.Errorf("%+v\n", err)
 		return Environment{}, ErrorEnvironmentNotFound
 	}
 	return environment, nil

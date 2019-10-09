@@ -1,8 +1,6 @@
 package store
 
 import (
-	"fmt"
-
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -21,8 +19,7 @@ func (v *Variable) Delete() error {
 	_, err := globalDB.Exec("DELETE FROM variables WHERE name=$1 AND environment=$2",
 		v.Name, v.Environment)
 	if err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
+		log.Errorf("%+v\n", err)
 		return ErrorVariableNotFound
 	}
 	return nil
@@ -32,8 +29,7 @@ func (v *Variable) Update() error {
 		`UPDATE variables SET value=:value, type=:type, generator=:generator
 		WHERE name=:name AND environment=:environment`, v)
 	if err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
+		log.Errorf("%+v\n", err)
 		return err
 	}
 	return nil
@@ -71,8 +67,7 @@ func StoreVariables(variables []Variable) error {
 func GetAllVariables() []Variable {
 	variables := []Variable{}
 	if err := globalDB.Select(&variables, "SELECT * FROM variables"); err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
+		log.Errorf("%+v\n", err)
 	}
 	return variables
 }
@@ -80,8 +75,7 @@ func GetVariablesByEnvironment(environment string) []Variable {
 	variables := []Variable{}
 	if err := globalDB.Select(&variables,
 		"SELECT * FROM variables WHERE environment=$1", environment); err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
+		log.Errorf("%+v\n", err)
 	}
 	return variables
 }
@@ -89,8 +83,7 @@ func GetVariablesByName(name string) []Variable {
 	variables := []Variable{}
 	if err := globalDB.Select(&variables,
 		"SELECT * FROM variables WHERE name=$1", name); err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
+		log.Errorf("%+v\n", err)
 	}
 	return variables
 }
@@ -99,8 +92,7 @@ func GetVariableByNameAndEnvironment(name, environment string) (Variable, error)
 	if err := globalDB.Get(&variable,
 		"SELECT * FROM variables WHERE name=$1 AND environment=$2",
 		name, environment); err != nil {
-		// TODO: log error
-		fmt.Printf("error: %+v\n", err)
+		log.Errorf("%+v\n", err)
 		return Variable{}, ErrorVariableNotFound
 	}
 	return variable, nil

@@ -19,7 +19,7 @@ func GetAllRequests() []Request {
 func GetRequestByName(name string) (Request, error) {
 	sRequest, err := store.GetRequestByName(name)
 	if err != nil {
-		// TODO: log error
+		log.Errorf("%+v\n", err)
 		return Request{}, err
 	}
 	return convertToRequest(sRequest), nil
@@ -35,7 +35,7 @@ func GetAllEnvironments() []Environment {
 func GetEnvironmentByName(name string) (Environment, error) {
 	sEnvironment, err := store.GetEnvironmentByName(name)
 	if err != nil {
-		// TODO: log error
+		log.Errorf("%+v\n", err)
 		return Environment{}, err
 	}
 	return convertToEnvironment(sEnvironment), nil
@@ -58,7 +58,7 @@ func GetVariablesByName(name string) []Variable {
 func GetVariableByNameAndEnvironment(name, environment string) (Variable, error) {
 	sVariable, err := store.GetVariableByNameAndEnvironment(name, environment)
 	if err != nil {
-		// TODO: log error
+		log.Errorf("%+v\n", err)
 		return Variable{}, err
 	}
 	return convertToVariable(sVariable), nil

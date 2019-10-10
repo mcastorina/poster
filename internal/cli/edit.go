@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -180,14 +179,12 @@ func updateData(data []byte) ([]byte, error) {
 
 	// Abort on empty file
 	if len(bytes) == 0 {
-		// TODO: make const, and should this be an error?
-		return nil, fmt.Errorf("empty file")
+		return nil, errorFileEmpty
 	}
 
 	// Abort on no changes
 	if string(data) == string(bytes) {
-		// TODO: make const, and should this be an error?
-		return nil, fmt.Errorf("no changes")
+		return nil, errorFileUnchanged
 	}
 
 	return bytes, nil
@@ -219,7 +216,7 @@ func createTmpFile(data []byte) (string, error) {
 func invokeEditor(path string) error {
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		return fmt.Errorf("No editor found")
+		return errorNoEditorFound
 	}
 	cmd := exec.Command(editor, path)
 	cmd.Stdin = os.Stdin

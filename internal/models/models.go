@@ -105,7 +105,7 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 	for _, variable := range e.GetVariables() {
 		if err := variable.GenerateValue(); err != nil {
 			log.Errorf("%+v\n", err)
-			return nil, ErrorGenerateVariableFailed
+			return nil, errorGenerateVariableFailed
 		}
 	}
 
@@ -117,7 +117,7 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, strings.NewReader(body))
 	if err != nil {
 		log.Errorf("%+v\n", err)
-		return nil, ErrorCreateRequestFailed
+		return nil, errorCreateRequestFailed
 	}
 	// Add headers
 	for _, header := range r.Headers {
@@ -130,7 +130,7 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Errorf("%+v\n", err)
-		return nil, ErrorRequestFailed
+		return nil, errorRequestFailed
 	}
 	return resp, nil
 }
@@ -156,7 +156,7 @@ func (r *Request) Validate() error {
 		"TRACE":   true,
 	}
 	if _, ok := validMethods[strings.ToUpper(r.Method)]; !ok {
-		return ErrorInvalidMethod
+		return errorInvalidMethod
 	}
 	r.Method = strings.ToUpper(r.Method)
 
@@ -182,7 +182,7 @@ type Environment struct {
 
 func (e *Environment) Save() error {
 	if err := e.Validate(); err != nil {
-		return ErrorInvalidEnvironment
+		return errorInvalidEnvironment
 	}
 	return e.ToStore().Save()
 }
@@ -270,7 +270,7 @@ func (v *Variable) Validate() error {
 		ScriptType:  true,
 	}
 	if _, ok := validTypes[strings.ToLower(v.Type)]; !ok {
-		return ErrorInvalidType
+		return errorInvalidType
 	}
 	v.Type = strings.ToLower(v.Type)
 	return nil
@@ -335,5 +335,5 @@ func (v *Variable) GenerateValue() error {
 		}
 		return nil
 	}
-	return ErrorInvalidType
+	return errorInvalidType
 }

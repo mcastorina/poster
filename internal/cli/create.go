@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 	"strings"
@@ -246,10 +245,10 @@ func createRequestArgs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if len(args) != 2 {
-		return fmt.Errorf("expected args missing: METHOD URL")
+		return errorMissingArgs("METHOD URL")
 	}
 	if !flagsAreSet(cmd, "name", "environment") {
-		return fmt.Errorf("expected flags missing: --name, --environment")
+		return errorMissingFlags("--name, --environment")
 	}
 	// check method is valid
 	validMethods := map[string]bool{
@@ -263,17 +262,12 @@ func createRequestArgs(cmd *cobra.Command, args []string) error {
 		"TRACE":   true,
 	}
 	if _, ok := validMethods[strings.ToUpper(args[0])]; !ok {
-		validMethodsArray := make([]string, 0, len(validMethods))
-		for key := range validMethods {
-			validMethodsArray = append(validMethodsArray, key)
-		}
-		return fmt.Errorf("METHOD \"%s\" not recognized. valid methods: %+v",
-			args[0], validMethodsArray)
+		return errorInvalidMethod
 	}
 	args[0] = strings.ToUpper(args[0])
 	// check url is valid
 	if !strings.Contains(args[1], "//") {
-		args[1] = fmt.Sprintf("//%s", args[1])
+		args[1] = "//" + args[1]
 	}
 	urlObj, err := url.Parse(args[1])
 	if err != nil {
@@ -297,7 +291,7 @@ func createEnvironmentArgs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if len(args) != 1 {
-		return fmt.Errorf("expected args missing: NAME")
+		return errorMissingArg("NAME")
 	}
 	return nil
 }
@@ -306,10 +300,10 @@ func createConstVariableArgs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if len(args) != 2 {
-		return fmt.Errorf("expected args missing: NAME VALUE")
+		return errorMissingArgs("NAME VALUE")
 	}
 	if !flagsAreSet(cmd, "environment") {
-		return fmt.Errorf("expected flag missing: --environment")
+		return errorMissingFlag("--environment")
 	}
 	return nil
 }
@@ -318,11 +312,10 @@ func createScriptVariableArgs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if len(args) != 2 {
-		return fmt.Errorf("expected args missing: NAME GENERATOR")
+		return errorMissingArgs("NAME GENERATOR")
 	}
 	if !flagsAreSet(cmd, "environment") {
-		// TODO: make const
-		return fmt.Errorf("expected flag missing: --environment")
+		return errorMissingFlag("--environment")
 	}
 	return nil
 }
@@ -331,11 +324,10 @@ func createRequestVariableArgs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if len(args) != 2 {
-		return fmt.Errorf("expected args missing: NAME REQUEST")
+		return errorMissingArgs("NAME REQUEST")
 	}
 	if !flagsAreSet(cmd, "environment") {
-		// TODO: make const
-		return fmt.Errorf("expected flag missing: --environment")
+		return errorMissingFlag("--environment")
 	}
 	return nil
 }
@@ -344,35 +336,23 @@ func createRequestVariableArgs(cmd *cobra.Command, args []string) error {
 func rawHeaderToSlice(header string) ([]string, error) {
 	values := strings.SplitN(header, ":", 2)
 	if len(values) != 2 {
-		// TODO: make const
-		return nil, fmt.Errorf("header should be in the format \"key:value\"")
+		return nil, errorInvalidHeaderFormat
 	}
 	key := strings.Trim(values[0], " \t")
 	value := strings.Trim(values[1], " \t")
 
 	if len(key) == 0 {
-		// TODO: make const
-		return nil, fmt.Errorf("header should be in the format \"key:value\"")
+		return nil, errorInvalidHeaderFormat
 	}
 
 	if strings.Index(header, "\n") != -1 {
-		// TODO: make const
-		return nil, fmt.Errorf("header should not contain newline characters")
+		return nil, errorHeaderContainsNewlineChars
 	}
 
 	return []string{key, value}, nil
 }
 func createRequestI(cmd *cobra.Command, args []string) {
-	// TODO: move this to models
-	template := models.Request{
-		Name:        "request template",
-		Method:      "GET",
-		URL:         "http://localhost",
-		Environment: models.Environment{Name: "local"},
-		Headers: []models.Header{
-			{Key: "Content-Type", Value: "application/json"},
-		},
-	}
+	template := models.RequestTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
@@ -390,10 +370,7 @@ func createRequestI(cmd *cobra.Command, args []string) {
 	}
 }
 func createEnvironmentI(cmd *cobra.Command, args []string) {
-	// TODO: move this to models
-	template := models.Environment{
-		Name: "environment template",
-	}
+	template := models.EnvironmentTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
@@ -411,13 +388,7 @@ func createEnvironmentI(cmd *cobra.Command, args []string) {
 	}
 }
 func createConstVariableI(cmd *cobra.Command, args []string) {
-	// TODO: move this to models
-	template := models.Variable{
-		Name:        "const variable template",
-		Value:       "value",
-		Environment: models.Environment{Name: "local"},
-		Type:        models.ConstType,
-	}
+	template := models.ConstVariableTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
@@ -435,15 +406,7 @@ func createConstVariableI(cmd *cobra.Command, args []string) {
 	}
 }
 func createScriptVariableI(cmd *cobra.Command, args []string) {
-	// TODO: move this to models
-	template := models.Variable{
-		Name:        "script variable template",
-		Environment: models.Environment{Name: "local"},
-		Type:        models.ScriptType,
-		Generator: &models.VariableGenerator{
-			Script: `date +'%D %T'`,
-		},
-	}
+	template := models.ScriptVariableTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
@@ -461,16 +424,7 @@ func createScriptVariableI(cmd *cobra.Command, args []string) {
 	}
 }
 func createRequestVariableI(cmd *cobra.Command, args []string) {
-	// TODO: move this to models
-	template := models.Variable{
-		Name:        "request variable template",
-		Environment: models.Environment{Name: "local"},
-		Type:        models.RequestType,
-		Generator: &models.VariableGenerator{
-			RequestName: "request-name",
-			RequestPath: "$",
-		},
-	}
+	template := models.RequestVariableTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)

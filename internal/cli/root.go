@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mcastorina/poster/internal/cache"
 	"github.com/mcastorina/poster/internal/models"
 	"github.com/mcastorina/poster/internal/store"
 	homedir "github.com/mitchellh/go-homedir"
@@ -27,6 +28,7 @@ func Execute() {
 	InitLogger()
 	models.InitLogger()
 	store.InitLogger()
+	cache.InitLogger()
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

@@ -37,7 +37,7 @@ func StoreEnvironments(envs []Environment) error {
 
 	for _, env := range envs {
 		if _, err := tx.NamedExec(
-			"INSERT INTO environments (name) VALUES (:name)",
+			"INSERT OR REPLACE INTO environments (name) VALUES (:name)",
 			&env); err != nil {
 
 			if sqliteErr, ok := err.(sqlite3.Error); ok {

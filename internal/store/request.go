@@ -33,7 +33,8 @@ func StoreRequests(requests []Request) error {
 
 	for _, request := range requests {
 		if _, err := tx.NamedExec(
-			`INSERT INTO requests (name, method, url, environment, body, headers)
+			`INSERT OR REPLACE INTO requests
+			(name, method, url, environment, body, headers)
 			VALUES (:name, :method, :url, :environment, :body, :headers)`,
 			&request); err != nil {
 

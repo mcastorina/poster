@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mcastorina/poster/internal/store"
+	"github.com/mcastorina/poster/internal/cache"
 	"github.com/yalp/jsonpath"
 )
 
@@ -69,6 +69,7 @@ func (r *Request) runEnv(e Environment) (*http.Response, error) {
 			log.Errorf("%+v\n", err)
 			return nil, err
 		}
+		variable.Save()
 	}
 
 	method := e.ReplaceVariables(r.Method)
@@ -107,6 +108,7 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 			log.Errorf("%+v\n", err)
 			return nil, errorGenerateVariableFailed
 		}
+		variable.Save()
 	}
 
 	method := e.ReplaceVariables(r.Method)
@@ -138,7 +140,7 @@ func (r *Request) Save() error {
 	if err := r.Validate(); err != nil {
 		return err
 	}
-	return r.ToStore().Save()
+	return cache.SaveRequest(r.ToStore())
 }
 func (r *Request) Delete() error {
 	return r.ToStore().Delete()
@@ -184,7 +186,7 @@ func (e *Environment) Save() error {
 	if err := e.Validate(); err != nil {
 		return errorInvalidEnvironment
 	}
-	return e.ToStore().Save()
+	return cache.SaveEnvironment(e.ToStore())
 }
 func (e *Environment) Delete() error {
 	return e.ToStore().Delete()
@@ -194,7 +196,7 @@ func (e *Environment) Validate() error {
 }
 func (e *Environment) GetVariables() []Variable {
 	validVariables := []Variable{}
-	for _, variable := range store.GetVariablesByEnvironment(e.Name) {
+	for _, variable := range cache.GetVariablesByEnvironment(e.Name) {
 		validVariables = append(validVariables, convertToVariable(variable))
 	}
 	return validVariables
@@ -257,7 +259,7 @@ func (v *Variable) Save() error {
 	if err := v.Validate(); err != nil {
 		return err
 	}
-	return v.ToStore().Save()
+	return cache.SaveVariable(v.ToStore())
 }
 func (v *Variable) Delete() error {
 	return v.ToStore().Delete()
@@ -285,12 +287,6 @@ func (v *Variable) GenerateValue() error {
 			return err
 		}
 		v.Value = string(bytes.Trim(out, "\n"))
-		// TODO: This function should not have to write the result to store,
-		//       however, it is necessary at this point in order for the changes
-		//       to be used elsewhere
-		if err := v.ToStore().Update(); err != nil {
-			return err
-		}
 		return nil
 	case RequestType:
 		req, err := GetRequestByName(v.Generator.RequestName)
@@ -326,12 +322,6 @@ func (v *Variable) GenerateValue() error {
 			} else {
 				v.Value = value
 			}
-		}
-		// TODO: This function should not have to write the result to store,
-		//       however, it is necessary at this point in order for the changes
-		//       to be used elsewhere
-		if err := v.ToStore().Update(); err != nil {
-			return err
 		}
 		return nil
 	}

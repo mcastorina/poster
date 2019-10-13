@@ -43,7 +43,8 @@ func StoreVariables(variables []Variable) error {
 
 	for _, variable := range variables {
 		if _, err := tx.NamedExec(
-			`INSERT INTO variables (name, value, environment, type, generator)
+			`INSERT OR REPLACE INTO variables
+			(name, value, environment, type, generator)
 			VALUES (:name, :value, :environment, :type, :generator)`,
 			&variable); err != nil {
 

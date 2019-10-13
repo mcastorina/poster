@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/mcastorina/poster/internal/store"
+	"github.com/mcastorina/poster/internal/cache"
 )
 
 func GetRunnableResourceByName(name string) (Runnable, error) {
@@ -11,13 +11,13 @@ func GetRunnableResourceByName(name string) (Runnable, error) {
 
 func GetAllRequests() []Request {
 	requests := []Request{}
-	for _, sRequest := range store.GetAllRequests() {
+	for _, sRequest := range cache.GetAllRequests() {
 		requests = append(requests, convertToRequest(sRequest))
 	}
 	return requests
 }
 func GetRequestByName(name string) (Request, error) {
-	sRequest, err := store.GetRequestByName(name)
+	sRequest, err := cache.GetRequestByName(name)
 	if err != nil {
 		log.Errorf("%+v\n", err)
 		return Request{}, err
@@ -27,13 +27,13 @@ func GetRequestByName(name string) (Request, error) {
 
 func GetAllEnvironments() []Environment {
 	envs := []Environment{}
-	for _, sEnvironment := range store.GetAllEnvironments() {
+	for _, sEnvironment := range cache.GetAllEnvironments() {
 		envs = append(envs, convertToEnvironment(sEnvironment))
 	}
 	return envs
 }
 func GetEnvironmentByName(name string) (Environment, error) {
-	sEnvironment, err := store.GetEnvironmentByName(name)
+	sEnvironment, err := cache.GetEnvironmentByName(name)
 	if err != nil {
 		log.Errorf("%+v\n", err)
 		return Environment{}, err
@@ -43,20 +43,20 @@ func GetEnvironmentByName(name string) (Environment, error) {
 
 func GetAllVariables() []Variable {
 	vars := []Variable{}
-	for _, sVariable := range store.GetAllVariables() {
+	for _, sVariable := range cache.GetAllVariables() {
 		vars = append(vars, convertToVariable(sVariable))
 	}
 	return vars
 }
 func GetVariablesByName(name string) []Variable {
 	vars := []Variable{}
-	for _, sVariable := range store.GetVariablesByName(name) {
+	for _, sVariable := range cache.GetVariablesByName(name) {
 		vars = append(vars, convertToVariable(sVariable))
 	}
 	return vars
 }
 func GetVariableByNameAndEnvironment(name, environment string) (Variable, error) {
-	sVariable, err := store.GetVariableByNameAndEnvironment(name, environment)
+	sVariable, err := cache.GetVariableByNameAndEnvironment(name, environment)
 	if err != nil {
 		log.Errorf("%+v\n", err)
 		return Variable{}, err

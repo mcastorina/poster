@@ -25,7 +25,7 @@ var createCmd = &cobra.Command{
 var createRequestCmd = &cobra.Command{
 	Use:     "request METHOD URL",
 	Aliases: []string{"req", "r"},
-	Short:   "A brief description of your command",
+	Short:   "Create a request resource",
 	Long: `Create request will create and save a request resource. A request resource
 contains the following attributes:
 

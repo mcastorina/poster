@@ -52,58 +52,13 @@ type Request struct {
 	Headers     []Header    `yaml:"headers"`
 }
 
-// TODO: These private functions are for request variables
-//       to avoid infinite loops.
-//       Adding a lastGenerated attribute may solve this.
-func (r *Request) run() (*http.Response, error) {
-	return r.runEnv(r.Environment)
-}
-func (r *Request) runEnv(e Environment) (*http.Response, error) {
-	// Generate variables
-	for _, variable := range e.GetVariables() {
-		// Skip request variables to avoid infinite loop
-		if variable.Type == RequestType {
-			continue
-		}
-		if err := variable.GenerateValue(); err != nil {
-			log.Errorf("%+v\n", err)
-			return nil, err
-		}
-		variable.Save()
-	}
-
-	method := e.ReplaceVariables(r.Method)
-	url := e.ReplaceVariables(r.URL)
-	body := e.ReplaceVariables(r.Body)
-
-	// Create request
-	req, err := http.NewRequest(method, url, strings.NewReader(body))
-	if err != nil {
-		log.Errorf("%+v\n", err)
-		return nil, err
-	}
-	// Add headers
-	for _, header := range r.Headers {
-		key := e.ReplaceVariables(header.Key)
-		value := e.ReplaceVariables(header.Value)
-		req.Header.Add(key, value)
-	}
-
-	// Send request and get response
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Errorf("%+v\n", err)
-		return nil, err
-	}
-	return resp, nil
-}
-
 func (r *Request) Run() (*http.Response, error) {
+	// TODO: Check for dependency cycles
 	return r.RunEnv(r.Environment)
 }
 func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 	// Generate variables
-	for _, variable := range e.GetVariables() {
+	for _, variable := range e.GetVariablesInRequest(r) {
 		if err := variable.GenerateValue(); err != nil {
 			log.Errorf("%+v\n", err)
 			return nil, errorGenerateVariableFailed
@@ -239,6 +194,31 @@ func (e *Environment) ReplaceVariables(input string) string {
 
 	return output
 }
+func (e *Environment) GetVariablesInRequest(r *Request) []Variable {
+	// Map of valid variable names
+	validVariables := make(map[string]Variable)
+	for _, variable := range e.GetVariables() {
+		validVariables[variable.Name] = variable
+	}
+	// Build search string as a combination of all parts
+	// of the request that can be replaced
+	searchString := r.Method + "\n" + r.URL + "\n" + r.Body
+	for _, header := range r.Headers {
+		searchString = searchString + "\n" + header.Key + "\n" + header.Value
+	}
+
+	// Search for variables in the string and add to slice
+	// if it is a valid variable name
+	variables := []Variable{}
+	re := regexp.MustCompile(`:(.*)\b`)
+	for _, varGroup := range re.FindAllStringSubmatch(searchString, -1) {
+		varName := varGroup[1]
+		if variable, ok := validVariables[varName]; ok {
+			variables = append(variables, variable)
+		}
+	}
+	return variables
+}
 
 // Variable
 type Variable struct {
@@ -293,8 +273,7 @@ func (v *Variable) GenerateValue() error {
 		if err != nil {
 			return err
 		}
-		// TODO: add runenv option
-		resp, err := req.run()
+		resp, err := req.Run()
 		if err != nil {
 			return err
 		}
@@ -311,7 +290,7 @@ func (v *Variable) GenerateValue() error {
 		} else {
 			var jBody interface{}
 			if err := json.Unmarshal(body, &jBody); err != nil {
-				return nil
+				return err
 			}
 			val, err := jsonpath.Read(jBody, v.Generator.RequestPath)
 			if err != nil {

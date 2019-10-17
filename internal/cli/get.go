@@ -69,8 +69,12 @@ func getEnvironment(cmd *cobra.Command, args []string) {
 func getVariable(cmd *cobra.Command, args []string) {
 	fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t\n", "NAME", "VALUE", "ENVIRONMENT", "TYPE")
 	for _, variable := range models.GetAllVariables() {
+		value := variable.Value
+		if len(value) > 50 {
+			value = value[:48] + ".."
+		}
 		fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t\n", variable.Name,
-			variable.Value, variable.Environment.Name, variable.Type)
+			value, variable.Environment.Name, variable.Type)
 	}
 	tabWriter.Flush()
 }

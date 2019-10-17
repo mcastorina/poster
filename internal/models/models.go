@@ -63,15 +63,30 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 			log.Errorf("%+v\n", err)
 			return nil, errorGenerateVariableFailed
 		}
+		log.Debugf("Variable %s updated to: %s\n", variable.Name, variable.Value)
 		variable.Save()
 	}
 
-	method := e.ReplaceVariables(r.Method)
-	url := e.ReplaceVariables(r.URL)
-	body := e.ReplaceVariables(r.Body)
+	methodStr := e.ReplaceVariables(r.Method)
+	urlStr := e.ReplaceVariables(r.URL)
+	bodyStr := e.ReplaceVariables(r.Body)
+
+	// Check url is valid
+	if !strings.Contains(urlStr, "//") {
+		urlStr = "//" + urlStr
+	}
+	urlObj, err := url.Parse(urlStr)
+	if err != nil {
+		log.Errorf("%+v\n", err)
+		return nil, errorInvalidURL
+	}
+	if urlObj.Scheme == "" {
+		urlObj.Scheme = "http"
+	}
+	urlStr = urlObj.String()
 
 	// Create request
-	req, err := http.NewRequest(method, url, strings.NewReader(body))
+	req, err := http.NewRequest(methodStr, urlStr, strings.NewReader(bodyStr))
 	if err != nil {
 		log.Errorf("%+v\n", err)
 		return nil, errorCreateRequestFailed
@@ -88,6 +103,15 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 	if err != nil {
 		log.Errorf("%+v\n", err)
 		return nil, errorRequestFailed
+	}
+	// Log sent data
+	{
+		logMessage := fmt.Sprintf("Sending request:\n> %s %s %s\n", req.Method, req.URL, req.Proto)
+		for key, value := range req.Header {
+			logMessage += "> " + key + ": " + strings.Join(value, ", ") + "\n"
+		}
+		logMessage += "\n"
+		log.Debugf(logMessage)
 	}
 	return resp, nil
 }
@@ -116,19 +140,6 @@ func (r *Request) Validate() error {
 		return errorInvalidMethod
 	}
 	r.Method = strings.ToUpper(r.Method)
-
-	// Check url is valid
-	if !strings.Contains(r.URL, "//") {
-		r.URL = "//" + r.URL
-	}
-	urlObj, err := url.Parse(r.URL)
-	if err != nil {
-		return err
-	}
-	if urlObj.Scheme == "" {
-		urlObj.Scheme = "http"
-	}
-	r.URL = urlObj.String()
 	return nil
 }
 

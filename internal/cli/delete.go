@@ -9,7 +9,7 @@ import (
 
 var deleteCmd = &cobra.Command{
 	Use:     "delete RESOURCE",
-	Aliases: []string{"remove", "rm"},
+	Aliases: []string{"del", "remove", "rm"},
 	Short:   "Delete resources",
 	Long: `Delete resources.
 `,

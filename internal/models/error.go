@@ -11,5 +11,6 @@ var (
 
 	errorCreateRequestFailed    = errors.New("Could not create a HTTP request")
 	errorRequestFailed          = errors.New("Request failed")
+	errorInvalidURL             = errors.New("Request URL is invalid")
 	errorGenerateVariableFailed = errors.New("Failed to generate variable")
 )

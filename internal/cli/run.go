@@ -75,14 +75,13 @@ func run(cmd *cobra.Command, args []string) {
 // helper functions
 func printResponse(resp *http.Response, verbose bool) error {
 	// print response code
-	fmt.Printf("%s %s\n", resp.Proto, resp.Status)
+	fmt.Fprintf(os.Stderr, "< %s %s\n", resp.Proto, resp.Status)
 
 	// print headers
 	if verbose {
 		for header, values := range resp.Header {
-			fmt.Printf("%s: %s\n", header, strings.Join(values, ","))
+			fmt.Fprintf(os.Stderr, "< %s: %s\n", header, strings.Join(values, ","))
 		}
-		fmt.Println()
 	}
 
 	// print body

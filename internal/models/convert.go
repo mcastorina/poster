@@ -55,7 +55,8 @@ func (v *Variable) ToStore() *store.Variable {
 	case ScriptType:
 		generator = v.Generator.Script
 	case RequestType:
-		generator = fmt.Sprintf("%s:%s", v.Generator.RequestName, v.Generator.RequestPath)
+		generator = fmt.Sprintf("%s:%s:%s",
+			v.Generator.RequestName, v.Generator.RequestEnvironment, v.Generator.RequestPath)
 	}
 	return &store.Variable{
 		Name:        v.Name,
@@ -77,9 +78,10 @@ func convertToVariable(s store.Variable) Variable {
 	case ScriptType:
 		generator.Script = s.Generator
 	case RequestType:
-		namePath := strings.SplitN(s.Generator, ":", 2)
+		namePath := strings.SplitN(s.Generator, ":", 3)
 		generator.RequestName = namePath[0]
-		generator.RequestPath = namePath[1]
+		generator.RequestEnvironment = namePath[1]
+		generator.RequestPath = namePath[2]
 	case ConstType:
 		generator = nil
 	}

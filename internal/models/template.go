@@ -44,8 +44,9 @@ func RequestVariableTemplate() Variable {
 		Environment: Environment{Name: "local"},
 		Type:        RequestType,
 		Generator: &VariableGenerator{
-			RequestName: "request-name",
-			RequestPath: "$",
+			RequestName:        "request-name",
+			RequestEnvironment: "environment-name",
+			RequestPath:        "$",
 		},
 	}
 }

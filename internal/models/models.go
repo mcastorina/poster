@@ -230,9 +230,10 @@ type Variable struct {
 }
 
 type VariableGenerator struct {
-	RequestName string `yaml:"request-name,omitempty"`
-	RequestPath string `yaml:"request-path,omitempty"`
-	Script      string `yaml:"script,omitempty"`
+	RequestName        string `yaml:"request-name,omitempty"`
+	RequestPath        string `yaml:"request-path,omitempty"`
+	RequestEnvironment string `yaml:"request-environment,omitempty"`
+	Script             string `yaml:"script,omitempty"`
 }
 
 func (v *Variable) Save() error {
@@ -273,7 +274,11 @@ func (v *Variable) GenerateValue() error {
 		if err != nil {
 			return err
 		}
-		resp, err := req.Run()
+		env, err := GetEnvironmentByName(v.Generator.RequestEnvironment)
+		if err != nil {
+			return err
+		}
+		resp, err := req.RunEnv(env)
 		if err != nil {
 			return err
 		}

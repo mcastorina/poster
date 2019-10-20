@@ -8,6 +8,7 @@ var (
 	errorInvalidVariable    = errors.New("Variable object contains invalid fields")
 	errorInvalidMethod      = errors.New("The provided method is invalid")
 	errorInvalidType        = errors.New("The provided type is invalid")
+	errorInvalidCharacters  = errors.New("The provided variable name contains invalid characters")
 
 	errorCreateRequestFailed    = errors.New("Could not create a HTTP request")
 	errorRequestFailed          = errors.New("Request failed")

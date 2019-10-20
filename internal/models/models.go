@@ -20,6 +20,8 @@ const (
 	ConstType   = "const"
 	RequestType = "request"
 	ScriptType  = "script"
+
+	variableRegexp = `:([\w-]*)\b`
 )
 
 type Resource interface {
@@ -221,7 +223,7 @@ func (e *Environment) GetVariablesInRequest(r *Request) []Variable {
 	// Search for variables in the string and add to slice
 	// if it is a valid variable name
 	variables := []Variable{}
-	re := regexp.MustCompile(`:(.*)\b`)
+	re := regexp.MustCompile(variableRegexp)
 	for _, varGroup := range re.FindAllStringSubmatch(searchString, -1) {
 		varName := varGroup[1]
 		if variable, ok := validVariables[varName]; ok {
@@ -267,6 +269,11 @@ func (v *Variable) Validate() error {
 		return errorInvalidType
 	}
 	v.Type = strings.ToLower(v.Type)
+	// Check that the regexp matches
+	re := regexp.MustCompile("^" + variableRegexp + "$")
+	if !re.MatchString(":" + v.Name) {
+		return errorInvalidCharacters
+	}
 	return nil
 }
 func (v *Variable) GenerateValue() error {

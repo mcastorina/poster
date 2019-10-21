@@ -61,14 +61,20 @@ type VariableGenerator struct {
 	RequestPath        string `yaml:"jsonpath,omitempty"`
 	RequestEnvironment string `yaml:"environment,omitempty"`
 	Script             string `yaml:"script,omitempty"`
+	Timeout            int64  `yaml:"timeout,omitempty"`
 }
 
 func (v *Variable) Save() error {
 	var generator *models.VariableGenerator
 	parent := false
 	if v.Generator != nil {
-		generatorStruct := models.VariableGenerator(*v.Generator)
-		generator = &generatorStruct
+		generator = &models.VariableGenerator{
+			RequestName:        v.Generator.RequestName,
+			RequestPath:        v.Generator.RequestPath,
+			RequestEnvironment: v.Generator.RequestEnvironment,
+			Script:             v.Generator.Script,
+			Timeout:            v.Generator.Timeout,
+		}
 		parent = generator.RequestEnvironment == "parent"
 	}
 	variable := models.Variable{

@@ -1,6 +1,8 @@
 package store
 
 import (
+	"time"
+
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -10,6 +12,8 @@ type Variable struct {
 	Environment string
 	Type        string
 	Generator   string
+	Timeout     int64
+	Last        time.Time
 }
 
 func (v *Variable) Save() error {
@@ -24,16 +28,6 @@ func (v *Variable) Delete() error {
 	}
 	return nil
 }
-func (v *Variable) Update() error {
-	_, err := globalDB.NamedExec(
-		`UPDATE variables SET value=:value, type=:type, generator=:generator
-		WHERE name=:name AND environment=:environment`, v)
-	if err != nil {
-		log.Errorf("%+v\n", err)
-		return err
-	}
-	return nil
-}
 
 func StoreVariables(variables []Variable) error {
 	if len(variables) == 0 {
@@ -44,8 +38,8 @@ func StoreVariables(variables []Variable) error {
 	for _, variable := range variables {
 		if _, err := tx.NamedExec(
 			`INSERT OR REPLACE INTO variables
-			(name, value, environment, type, generator)
-			VALUES (:name, :value, :environment, :type, :generator)`,
+			(name, value, environment, type, generator, timeout, last) VALUES
+			(:name, :value, :environment, :type, :generator, :timeout, :last)`,
 			&variable); err != nil {
 
 			if sqliteErr, ok := err.(sqlite3.Error); ok {
@@ -111,6 +105,8 @@ func init() {
 		environment TEXT NOT NULL,
 		type TEXT NOT NULL,
 		generator TEXT,
+		timeout INT,
+		last DATETIME,
 		PRIMARY KEY (name, environment),
 		FOREIGN KEY(environment) REFERENCES environments(name)
 	);

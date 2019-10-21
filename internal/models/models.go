@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mcastorina/poster/internal/cache"
 	"github.com/yalp/jsonpath"
@@ -271,12 +272,13 @@ type Variable struct {
 	Type        string             `yaml:"type"`
 	Generator   *VariableGenerator `yaml:"generator,omitempty"`
 }
-
 type VariableGenerator struct {
 	RequestName        string `yaml:"request-name,omitempty"`
 	RequestPath        string `yaml:"request-path,omitempty"`
 	RequestEnvironment string `yaml:"request-environment,omitempty"`
 	Script             string `yaml:"script,omitempty"`
+	Timeout            int64  `yaml:"timeout"`
+	LastGenerated      time.Time
 }
 
 func (v *Variable) Save() error {
@@ -308,6 +310,15 @@ func (v *Variable) Validate() error {
 	return nil
 }
 func (v *Variable) GenerateValue() error {
+	if v.Generator == nil {
+		return nil
+	}
+	timeout := time.Duration(v.Generator.Timeout) * time.Minute
+	if time.Since(v.Generator.LastGenerated) < timeout {
+		return nil
+	}
+	log.Infof("Variable %s is stale, generating new value..", v.Name)
+
 	switch v.Type {
 	case ConstType:
 		return nil
@@ -317,6 +328,7 @@ func (v *Variable) GenerateValue() error {
 			return err
 		}
 		v.Value = string(bytes.Trim(out, "\n"))
+		v.Generator.LastGenerated = time.Now()
 		return nil
 	case RequestType:
 		req, err := GetRequestByName(v.Generator.RequestName)
@@ -356,6 +368,7 @@ func (v *Variable) GenerateValue() error {
 				v.Value = value
 			}
 		}
+		v.Generator.LastGenerated = time.Now()
 		return nil
 	}
 	return errorInvalidType

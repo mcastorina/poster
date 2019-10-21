@@ -50,21 +50,25 @@ func convertToEnvironment(s store.Environment) Environment {
 }
 
 func (v *Variable) ToStore() *store.Variable {
-	generator := ""
-	switch v.Type {
-	case ScriptType:
-		generator = v.Generator.Script
-	case RequestType:
-		generator = fmt.Sprintf("%s:%s:%s",
-			v.Generator.RequestName, v.Generator.RequestEnvironment, v.Generator.RequestPath)
-	}
-	return &store.Variable{
+	sVariable := &store.Variable{
 		Name:        v.Name,
 		Value:       v.Value,
 		Environment: v.Environment.Name,
 		Type:        v.Type,
-		Generator:   generator,
 	}
+	if v.Generator != nil {
+		switch v.Type {
+		case ScriptType:
+			sVariable.Generator = v.Generator.Script
+		case RequestType:
+			sVariable.Generator = fmt.Sprintf("%s:%s:%s",
+				v.Generator.RequestName, v.Generator.RequestEnvironment,
+				v.Generator.RequestPath)
+		}
+		sVariable.Timeout = v.Generator.Timeout
+		sVariable.Last = v.Generator.LastGenerated
+	}
+	return sVariable
 }
 func convertToVariable(s store.Variable) Variable {
 	variable := Variable{
@@ -84,6 +88,10 @@ func convertToVariable(s store.Variable) Variable {
 		generator.RequestPath = namePath[2]
 	case ConstType:
 		generator = nil
+	}
+	if generator != nil {
+		generator.Timeout = s.Timeout
+		generator.LastGenerated = s.Last
 	}
 	variable.Generator = generator
 	return variable

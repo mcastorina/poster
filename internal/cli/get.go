@@ -9,6 +9,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	wideFormat = "wide"
+)
+
 var getCmd = &cobra.Command{
 	Use:     "get RESOURCE",
 	Aliases: []string{"print", "g", "p"},
@@ -47,36 +51,75 @@ func init() {
 	getCmd.AddCommand(getRequestCmd)
 	getCmd.AddCommand(getEnvironmentCmd)
 	getCmd.AddCommand(getVariableCmd)
+
+	// get flags
+	getCmd.PersistentFlags().StringP("output", "o", "", "Output format")
 }
 
 // run functions
 func getRequest(cmd *cobra.Command, args []string) {
-	fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t\n",
-		"NAME", "METHOD", "URL", "DEFAULT ENVIRONMENT")
+	outputFormat, _ := cmd.Flags().GetString("output")
+	header := []interface{}{"NAME", "METHOD", "URL", "DEFAULT ENVIRONMENT"}
+	if outputFormat == wideFormat {
+		header = append(header, "HEADERS", "BODY")
+	}
+	printTableRow(header...)
 	for _, request := range models.GetAllRequests() {
-		fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t\n", request.Name,
-			request.Method, request.URL, request.Environment.Name)
+		row := []interface{}{request.Name, request.Method, request.URL, request.Environment.Name}
+		if outputFormat == wideFormat {
+			row = append(row, request.Headers, request.Body)
+		}
+		printTableRow(row...)
 	}
 	tabWriter.Flush()
 }
 func getEnvironment(cmd *cobra.Command, args []string) {
-	fmt.Fprintf(tabWriter, "%s\t\n", "NAME")
+	printTableRow("NAME", "VARIABLES")
 	for _, env := range models.GetAllEnvironments() {
-		fmt.Fprintf(tabWriter, "%s\t\n", env.Name)
+		printTableRow(env.Name, env.GetVariableNames())
 	}
 	tabWriter.Flush()
 }
 func getVariable(cmd *cobra.Command, args []string) {
-	fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t\n", "NAME", "VALUE", "ENVIRONMENT", "TYPE")
+	outputFormat, _ := cmd.Flags().GetString("output")
+	header := []interface{}{"NAME", "VALUE", "ENVIRONMENT", "TYPE"}
+	if outputFormat == wideFormat {
+		header = append(header, "GENERATOR")
+	}
+	printTableRow(header...)
 	for _, variable := range models.GetAllVariables() {
 		value := variable.Value
 		if len(value) > 50 {
 			value = value[:48] + ".."
 		}
-		fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t\n", variable.Name,
-			value, variable.Environment.Name, variable.Type)
+		row := []interface{}{variable.Name, value, variable.Environment.Name, variable.Type}
+		if outputFormat == wideFormat {
+			generator := ""
+			if varGen := variable.Generator; varGen != nil {
+				switch variable.Type {
+				case models.ScriptType:
+					generator = varGen.Script
+				case models.RequestType:
+					generator = varGen.RequestName + "(" + varGen.RequestEnvironment + "): " + varGen.RequestPath
+				case models.ConstType:
+				}
+			}
+			row = append(row, generator)
+		}
+		printTableRow(row...)
 	}
 	tabWriter.Flush()
 }
 
 // argument functions
+
+// helper functions
+func printTableRow(cols ...interface{}) {
+	formatStr := ""
+	for i := 0; i < len(cols); i++ {
+		formatStr += "%s\t"
+	}
+	formatStr += "\n"
+
+	fmt.Fprintf(tabWriter, formatStr, cols...)
+}

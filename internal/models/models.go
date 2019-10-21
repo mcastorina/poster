@@ -169,6 +169,14 @@ func (e *Environment) GetVariables() []Variable {
 	}
 	return validVariables
 }
+func (e *Environment) GetVariableNames() []string {
+	varNames := []string{}
+	for _, sVariable := range cache.GetVariablesByEnvironment(e.Name) {
+		varNames = append(varNames, sVariable.Name)
+	}
+	sort.Strings(varNames)
+	return varNames
+}
 func (e *Environment) ReplaceVariables(input string) string {
 	if strings.Index(input, ":") == -1 {
 		return input

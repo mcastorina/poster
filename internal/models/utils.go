@@ -4,6 +4,12 @@ import (
 	"github.com/mcastorina/poster/internal/cache"
 )
 
+var (
+	globalEnvironment = Environment{
+		Name: "global",
+	}
+)
+
 func GetRunnableResourceByName(name string) (Runnable, error) {
 	resource, err := GetRequestByName(name)
 	return &resource, err

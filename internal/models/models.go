@@ -183,7 +183,8 @@ func (e *Environment) ReplaceVariables(input string) string {
 
 	// Iterate over all variables and create a slice of their locations
 	// in the input string.
-	for _, variable := range e.GetVariables() {
+	// TODO: Optimize this to use only required variables (found in generate step).
+	for _, variable := range e.GetVariablesWithGlobal() {
 		re := regexp.MustCompile(`:` + variable.Name + `\b`)
 		for _, loc := range re.FindAllStringIndex(input, -1) {
 			varLocs = append(varLocs, locType{
@@ -210,6 +211,10 @@ func (e *Environment) ReplaceVariables(input string) string {
 func (e *Environment) GetVariablesInRequest(r *Request) []Variable {
 	// Map of valid variable names
 	validVariables := make(map[string]Variable)
+	// Global must be first so it gets overwritten on collision
+	for _, variable := range globalEnvironment.GetVariables() {
+		validVariables[variable.Name] = variable
+	}
 	for _, variable := range e.GetVariables() {
 		validVariables[variable.Name] = variable
 	}
@@ -229,6 +234,23 @@ func (e *Environment) GetVariablesInRequest(r *Request) []Variable {
 		if variable, ok := validVariables[varName]; ok {
 			variables = append(variables, variable)
 		}
+	}
+	return variables
+}
+func (e *Environment) GetVariablesWithGlobal() []Variable {
+	// Map of valid variable names
+	validVariables := make(map[string]Variable)
+	// Global must be first so it gets overwritten on collision
+	for _, variable := range globalEnvironment.GetVariables() {
+		validVariables[variable.Name] = variable
+	}
+	for _, variable := range e.GetVariables() {
+		validVariables[variable.Name] = variable
+	}
+	// Build return array
+	variables := []Variable{}
+	for _, variable := range validVariables {
+		variables = append(variables, variable)
 	}
 	return variables
 }
@@ -274,6 +296,7 @@ func (v *Variable) Validate() error {
 	if !re.MatchString(":" + v.Name) {
 		return errorInvalidCharacters
 	}
+	// TODO: Verify generator
 	return nil
 }
 func (v *Variable) GenerateValue() error {

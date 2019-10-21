@@ -83,4 +83,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	globalDB.Exec(`INSERT INTO environments (name) VALUES ('global')`)
 }

@@ -339,7 +339,7 @@ func rawHeaderToSlice(header string) ([]string, error) {
 	return []string{key, value}, nil
 }
 func createRequestI(cmd *cobra.Command, args []string) {
-	template := models.RequestTemplate()
+	template := requestTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
@@ -357,7 +357,7 @@ func createRequestI(cmd *cobra.Command, args []string) {
 	}
 }
 func createEnvironmentI(cmd *cobra.Command, args []string) {
-	template := models.EnvironmentTemplate()
+	template := environmentTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
@@ -375,7 +375,7 @@ func createEnvironmentI(cmd *cobra.Command, args []string) {
 	}
 }
 func createConstVariableI(cmd *cobra.Command, args []string) {
-	template := models.ConstVariableTemplate()
+	template := constVariableTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
@@ -393,7 +393,7 @@ func createConstVariableI(cmd *cobra.Command, args []string) {
 	}
 }
 func createScriptVariableI(cmd *cobra.Command, args []string) {
-	template := models.ScriptVariableTemplate()
+	template := scriptVariableTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)
@@ -411,7 +411,7 @@ func createScriptVariableI(cmd *cobra.Command, args []string) {
 	}
 }
 func createRequestVariableI(cmd *cobra.Command, args []string) {
-	template := models.RequestVariableTemplate()
+	template := requestVariableTemplate()
 	var err error
 	data, _ := yaml.Marshal(template)
 	data, err = updateData(data)

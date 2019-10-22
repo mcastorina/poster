@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"text/tabwriter"
 
 	"github.com/mcastorina/poster/internal/models"
@@ -84,7 +85,7 @@ func getVariable(cmd *cobra.Command, args []string) {
 	outputFormat, _ := cmd.Flags().GetString("output")
 	header := []interface{}{"NAME", "VALUE", "ENVIRONMENT", "TYPE"}
 	if outputFormat == wideFormat {
-		header = append(header, "GENERATOR")
+		header = append(header, "GENERATOR", "TIMEOUT", "LAST GENERATED")
 	}
 	printTableRow(header...)
 	for _, variable := range models.GetAllVariables() {
@@ -95,16 +96,21 @@ func getVariable(cmd *cobra.Command, args []string) {
 		row := []interface{}{variable.Name, value, variable.Environment.Name, variable.Type}
 		if outputFormat == wideFormat {
 			generator := ""
+			timeout := ""
+			lastGenerated := ""
 			if varGen := variable.Generator; varGen != nil {
 				switch variable.Type {
 				case models.ScriptType:
 					generator = varGen.Script
 				case models.RequestType:
-					generator = varGen.RequestName + "(" + varGen.RequestEnvironment + "): " + varGen.RequestPath
+					generator = fmt.Sprintf("%s(%s): %s", varGen.RequestName,
+						varGen.RequestEnvironment, varGen.RequestPath)
 				case models.ConstType:
 				}
+				timeout = strconv.FormatInt(varGen.Timeout, 10)
+				lastGenerated = varGen.LastGenerated.Format("01/02/06 15:04:05")
 			}
-			row = append(row, generator)
+			row = append(row, generator, timeout, lastGenerated)
 		}
 		printTableRow(row...)
 	}

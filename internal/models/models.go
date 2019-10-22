@@ -66,7 +66,6 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 			log.Errorf("%+v\n", err)
 			return nil, errorGenerateVariableFailed
 		}
-		log.Debugf("Variable %s updated to: %s\n", variable.Name, variable.Value)
 		variable.Save()
 	}
 
@@ -368,6 +367,7 @@ func (v *Variable) GenerateValue() error {
 				v.Value = value
 			}
 		}
+		log.Debugf("Variable %s updated to: %s\n", v.Name, v.Value)
 		v.Generator.LastGenerated = time.Now()
 		return nil
 	}

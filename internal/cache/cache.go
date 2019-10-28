@@ -27,9 +27,39 @@ func GetRequestByName(name string) (store.Request, error) {
 	cacheSet(key, request)
 	return request, nil
 }
+func GetRequestsByEnvironment(env string) []store.Request {
+	key := "GetRequestsByEnvironment:" + env
+	if requests, ok := cacheGet(key); ok {
+		return requests.([]store.Request)
+	}
+	requests := store.GetRequestsByEnvironment(env)
+	cacheSet(key, requests)
+	return requests
+}
+func GetRequestsByMethod(method string) []store.Request {
+	key := "GetRequestsByMethod:" + method
+	if requests, ok := cacheGet(key); ok {
+		return requests.([]store.Request)
+	}
+	requests := store.GetRequestsByMethod(method)
+	cacheSet(key, requests)
+	return requests
+}
+func GetRequestsByEnvironmentAndMethod(env, method string) []store.Request {
+	key := "GetRequestsByEnvironmentAndMethod:" + env + "," + method
+	if requests, ok := cacheGet(key); ok {
+		return requests.([]store.Request)
+	}
+	requests := store.GetRequestsByEnvironmentAndMethod(env, method)
+	cacheSet(key, requests)
+	return requests
+}
 func SaveRequest(r *store.Request) error {
 	delete(cache, "GetAllRequests")
 	delete(cache, "GetRequestByName:"+r.Name)
+	delete(cache, "GetRequestByEnvironment:"+r.Environment)
+	delete(cache, "GetRequestByMethod:"+r.Method)
+	delete(cache, "GetRequestByEnvironmentAndMethod:"+r.Environment+","+r.Method)
 	return r.Save()
 }
 
@@ -133,6 +163,9 @@ func SaveVariable(v *store.Variable) error {
 	delete(cache, "GetVariablesByEnvironment:"+v.Environment)
 	delete(cache, "GetVariablesByName:"+v.Name)
 	delete(cache, "GetVariableByNameAndEnvironment:"+v.Name+","+v.Environment)
+	delete(cache, "GetVariablesByType:"+v.Type)
+	delete(cache, "GetVariablesByNameAndType:"+v.Name+","+v.Type)
+	delete(cache, "GetVariablesByEnvironmentAndType:"+v.Environment+","+v.Type)
 	return v.Save()
 }
 

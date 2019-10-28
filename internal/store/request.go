@@ -70,6 +70,30 @@ func GetRequestByName(name string) (Request, error) {
 	}
 	return request, nil
 }
+func GetRequestsByEnvironment(environment string) []Request {
+	requests := []Request{}
+	if err := globalDB.Select(&requests,
+		"SELECT * FROM requests WHERE environment=$1", environment); err != nil {
+		log.Errorf("%+v\n", err)
+	}
+	return requests
+}
+func GetRequestsByMethod(method string) []Request {
+	requests := []Request{}
+	if err := globalDB.Select(&requests,
+		"SELECT * FROM requests WHERE method=$1", method); err != nil {
+		log.Errorf("%+v\n", err)
+	}
+	return requests
+}
+func GetRequestsByEnvironmentAndMethod(environment, method string) []Request {
+	requests := []Request{}
+	if err := globalDB.Select(&requests,
+		"SELECT * FROM requests WHERE environment=$1 AND method=$2", environment, method); err != nil {
+		log.Errorf("%+v\n", err)
+	}
+	return requests
+}
 
 func init() {
 	if globalDB == nil {

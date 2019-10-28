@@ -30,6 +30,27 @@ func GetRequestByName(name string) (Request, error) {
 	}
 	return convertToRequest(sRequest), nil
 }
+func GetRequestsByEnvironment(env string) []Request {
+	requests := []Request{}
+	for _, sRequest := range cache.GetRequestsByEnvironment(env) {
+		requests = append(requests, convertToRequest(sRequest))
+	}
+	return requests
+}
+func GetRequestsByMethod(method string) []Request {
+	requests := []Request{}
+	for _, sRequest := range cache.GetRequestsByMethod(method) {
+		requests = append(requests, convertToRequest(sRequest))
+	}
+	return requests
+}
+func GetRequestsByEnvironmentAndMethod(env, method string) []Request {
+	requests := []Request{}
+	for _, sRequest := range cache.GetRequestsByEnvironmentAndMethod(env, method) {
+		requests = append(requests, convertToRequest(sRequest))
+	}
+	return requests
+}
 
 func GetAllEnvironments() []Environment {
 	envs := []Environment{}

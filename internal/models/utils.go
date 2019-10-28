@@ -61,6 +61,34 @@ func GetVariablesByName(name string) []Variable {
 	}
 	return vars
 }
+func GetVariablesByNameAndType(name, typ string) []Variable {
+	vars := []Variable{}
+	for _, sVariable := range cache.GetVariablesByNameAndType(name, typ) {
+		vars = append(vars, convertToVariable(sVariable))
+	}
+	return vars
+}
+func GetVariablesByEnvironment(environment string) []Variable {
+	vars := []Variable{}
+	for _, sVariable := range cache.GetVariablesByEnvironment(environment) {
+		vars = append(vars, convertToVariable(sVariable))
+	}
+	return vars
+}
+func GetVariablesByEnvironmentAndType(environment, typ string) []Variable {
+	vars := []Variable{}
+	for _, sVariable := range cache.GetVariablesByEnvironmentAndType(environment, typ) {
+		vars = append(vars, convertToVariable(sVariable))
+	}
+	return vars
+}
+func GetVariablesByType(typ string) []Variable {
+	vars := []Variable{}
+	for _, sVariable := range cache.GetVariablesByType(typ) {
+		vars = append(vars, convertToVariable(sVariable))
+	}
+	return vars
+}
 func GetVariableByNameAndEnvironment(name, environment string) (Variable, error) {
 	sVariable, err := cache.GetVariableByNameAndEnvironment(name, environment)
 	if err != nil {

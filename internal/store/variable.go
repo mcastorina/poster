@@ -66,6 +66,14 @@ func GetAllVariables() []Variable {
 	}
 	return variables
 }
+func GetVariablesByName(name string) []Variable {
+	variables := []Variable{}
+	if err := globalDB.Select(&variables,
+		"SELECT * FROM variables WHERE name=$1", name); err != nil {
+		log.Errorf("%+v\n", err)
+	}
+	return variables
+}
 func GetVariablesByEnvironment(environment string) []Variable {
 	variables := []Variable{}
 	if err := globalDB.Select(&variables,
@@ -74,10 +82,10 @@ func GetVariablesByEnvironment(environment string) []Variable {
 	}
 	return variables
 }
-func GetVariablesByName(name string) []Variable {
+func GetVariablesByType(typ string) []Variable {
 	variables := []Variable{}
 	if err := globalDB.Select(&variables,
-		"SELECT * FROM variables WHERE name=$1", name); err != nil {
+		"SELECT * FROM variables WHERE type=$1", typ); err != nil {
 		log.Errorf("%+v\n", err)
 	}
 	return variables
@@ -91,6 +99,22 @@ func GetVariableByNameAndEnvironment(name, environment string) (Variable, error)
 		return Variable{}, ErrorVariableNotFound
 	}
 	return variable, nil
+}
+func GetVariablesByEnvironmentAndType(environment, typ string) []Variable {
+	variables := []Variable{}
+	if err := globalDB.Select(&variables,
+		"SELECT * FROM variables WHERE environment=$1 AND type=$2", environment, typ); err != nil {
+		log.Errorf("%+v\n", err)
+	}
+	return variables
+}
+func GetVariablesByNameAndType(name, typ string) []Variable {
+	variables := []Variable{}
+	if err := globalDB.Select(&variables,
+		"SELECT * FROM variables WHERE name=$1 AND type=$2", name, typ); err != nil {
+		log.Errorf("%+v\n", err)
+	}
+	return variables
 }
 
 func init() {

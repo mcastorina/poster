@@ -38,7 +38,7 @@ var getEnvironmentCmd = &cobra.Command{
 	Run: getEnvironment,
 }
 var getVariableCmd = &cobra.Command{
-	Use:     "variable",
+	Use:     "variable [NAME ...]",
 	Aliases: []string{"variables", "var", "vars", "v"},
 	Short:   "Print variable resources",
 	Long: `Print variable resources.
@@ -55,6 +55,10 @@ func init() {
 
 	// get flags
 	getCmd.PersistentFlags().StringP("output", "o", "", "Output format")
+
+	// getVariable flags
+	getVariableCmd.Flags().StringP("environment", "e", "", "Filter by environment")
+	getVariableCmd.Flags().StringP("type", "t", "", "Filter by type")
 }
 
 // run functions
@@ -82,13 +86,14 @@ func getEnvironment(cmd *cobra.Command, args []string) {
 	tabWriter.Flush()
 }
 func getVariable(cmd *cobra.Command, args []string) {
+	variables := findVariablesFromArguments(cmd, args)
 	outputFormat, _ := cmd.Flags().GetString("output")
 	header := []interface{}{"NAME", "VALUE", "ENVIRONMENT", "TYPE"}
 	if outputFormat == wideFormat {
 		header = append(header, "GENERATOR", "TIMEOUT", "LAST GENERATED")
 	}
 	printTableRow(header...)
-	for _, variable := range models.GetAllVariables() {
+	for _, variable := range variables {
 		value := variable.Value
 		if len(value) > 50 {
 			value = value[:48] + ".."
@@ -128,4 +133,52 @@ func printTableRow(cols ...interface{}) {
 	formatStr += "\n"
 
 	fmt.Fprintf(tabWriter, formatStr, cols...)
+}
+func findVariablesFromArguments(cmd *cobra.Command, args []string) []models.Variable {
+	envFlag, _ := cmd.Flags().GetString("environment")
+	typeFlag, _ := cmd.Flags().GetString("type")
+
+	// Most specific to least specific
+	if envFlag != "" && typeFlag != "" {
+		if len(args) == 0 {
+			return models.GetVariablesByEnvironmentAndType(envFlag, typeFlag)
+		}
+		variables := []models.Variable{}
+		for _, arg := range args {
+			if variable, err := models.GetVariableByNameAndEnvironment(arg, envFlag); err == nil && variable.Type == typeFlag {
+				variables = append(variables, variable)
+			}
+		}
+		return variables
+	}
+	if envFlag != "" {
+		if len(args) == 0 {
+			return models.GetVariablesByEnvironment(envFlag)
+		}
+		variables := []models.Variable{}
+		for _, arg := range args {
+			if variable, err := models.GetVariableByNameAndEnvironment(arg, envFlag); err == nil {
+				variables = append(variables, variable)
+			}
+		}
+		return variables
+	}
+	if typeFlag != "" {
+		if len(args) == 0 {
+			return models.GetVariablesByType(typeFlag)
+		}
+		variables := []models.Variable{}
+		for _, arg := range args {
+			variables = append(variables, models.GetVariablesByNameAndType(arg, typeFlag)...)
+		}
+		return variables
+	}
+	if len(args) == 0 {
+		return models.GetAllVariables()
+	}
+	variables := []models.Variable{}
+	for _, arg := range args {
+		variables = append(variables, models.GetVariablesByName(arg)...)
+	}
+	return variables
 }

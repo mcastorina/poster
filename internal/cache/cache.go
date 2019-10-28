@@ -69,6 +69,15 @@ func GetAllVariables() []store.Variable {
 	cacheSet(key, variables)
 	return variables
 }
+func GetVariablesByName(name string) []store.Variable {
+	key := "GetVariablesByName:" + name
+	if variables, ok := cacheGet(key); ok {
+		return variables.([]store.Variable)
+	}
+	variables := store.GetVariablesByName(name)
+	cacheSet(key, variables)
+	return variables
+}
 func GetVariablesByEnvironment(environment string) []store.Variable {
 	key := "GetVariablesByEnvironment:" + environment
 	if variables, ok := cacheGet(key); ok {
@@ -78,12 +87,12 @@ func GetVariablesByEnvironment(environment string) []store.Variable {
 	cacheSet(key, variables)
 	return variables
 }
-func GetVariablesByName(name string) []store.Variable {
-	key := "GetVariablesByName:" + name
+func GetVariablesByType(typ string) []store.Variable {
+	key := "GetVariablesByType:" + typ
 	if variables, ok := cacheGet(key); ok {
 		return variables.([]store.Variable)
 	}
-	variables := store.GetVariablesByName(name)
+	variables := store.GetVariablesByType(typ)
 	cacheSet(key, variables)
 	return variables
 }
@@ -99,6 +108,25 @@ func GetVariableByNameAndEnvironment(name, environment string) (store.Variable, 
 	}
 	cacheSet(key, variable)
 	return variable, nil
+}
+func GetVariablesByNameAndType(name, typ string) []store.Variable {
+	key := "GetVariablesByNameAndType:" + name + "," + typ
+	if variables, ok := cacheGet(key); ok {
+		return variables.([]store.Variable)
+	}
+	variables := store.GetVariablesByNameAndType(name, typ)
+	cacheSet(key, variables)
+	return variables
+}
+func GetVariablesByEnvironmentAndType(environment, typ string) []store.Variable {
+	// This is susceptible to collisions but is fine for now
+	key := "GetVariablesByEnvironmentAndType:" + environment + "," + typ
+	if variables, ok := cacheGet(key); ok {
+		return variables.([]store.Variable)
+	}
+	variables := store.GetVariablesByEnvironmentAndType(environment, typ)
+	cacheSet(key, variables)
+	return variables
 }
 func SaveVariable(v *store.Variable) error {
 	delete(cache, "GetAllVariables")

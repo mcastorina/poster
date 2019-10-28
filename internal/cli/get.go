@@ -64,6 +64,9 @@ func init() {
 	getRequestCmd.Flags().StringArray("with-header", []string{}, "Filter by request containing header key or value")
 	getRequestCmd.Flags().StringArray("with-body", []string{}, "Filter by request containing body")
 
+	// getEnvironment flags
+	getEnvironmentCmd.Flags().StringArray("with-variable", []string{}, "Filter by environment containing variable")
+
 	// getVariable flags
 	getVariableCmd.Flags().StringP("environment", "e", "", "Filter by environment")
 	getVariableCmd.Flags().StringP("type", "t", "", "Filter by type")
@@ -249,6 +252,45 @@ func getRequestsFromArguments(cmd *cobra.Command, args []string) []models.Reques
 	}
 
 	return requests
+}
+func getEnvironmentsFromArguments(cmd *cobra.Command, args []string) []models.Environment {
+	withVariables, _ := cmd.Flags().GetStringArray("with-variable")
+
+	environments := []models.Environment{}
+	if len(args) > 0 {
+		for _, arg := range args {
+			if environment, err := models.GetEnvironmentByName(arg); err == nil {
+				environments = append(environments, environment)
+			}
+		}
+	} else {
+		environments = models.GetAllEnvironments()
+	}
+	if len(withVariables) > 0 {
+		envMap := make(map[string]models.Environment)
+		for _, env := range environments {
+			envMap[env.Name] = env
+		}
+
+		// TODO: Remove nested loops
+		for _, environment := range envMap {
+			variableMap := make(map[string]bool)
+			for _, variableName := range environment.GetVariableNames() {
+				variableMap[variableName] = true
+			}
+			for _, withVar := range withVariables {
+				if !variableMap[withVar] {
+					delete(envMap, environment.Name)
+				}
+			}
+		}
+
+		environments = []models.Environment{}
+		for _, environment := range envMap {
+			environments = append(environments, environment)
+		}
+	}
+	return environments
 }
 func getVariablesFromArguments(cmd *cobra.Command, args []string) []models.Variable {
 	envFlag, _ := cmd.Flags().GetString("environment")

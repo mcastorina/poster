@@ -77,7 +77,7 @@ func deleteVariable(cmd *cobra.Command, args []string) {
 	for _, arg := range args {
 		for _, variable := range models.GetVariablesByName(arg) {
 			if err := variable.Delete(); err != nil {
-				log.Errorf("Failed to delete %s: %+v\n", variable, err)
+				log.Errorf("Failed to delete %s: %+v\n", arg, err)
 				os.Exit(1)
 			}
 		}

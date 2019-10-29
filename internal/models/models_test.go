@@ -4,9 +4,16 @@ import (
 	"testing"
 
 	"github.com/bouk/monkey"
+	"github.com/mcastorina/poster/internal/cache"
 	"github.com/mcastorina/poster/internal/store"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMain(m *testing.M) {
+	InitLogger()
+	cache.InitLogger()
+	store.InitLogger()
+}
 
 func TestReplaceVariablesOne(t *testing.T) {
 	defer monkey.UnpatchAll()

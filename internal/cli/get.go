@@ -74,7 +74,14 @@ func init() {
 
 // run functions
 func getRequest(cmd *cobra.Command, args []string) {
-	requests := getRequestsFromArguments(cmd, args)
+	envFlag, _ := cmd.Flags().GetString("environment")
+	methodFlag, _ := cmd.Flags().GetString("method")
+	methodFlag = strings.ToUpper(methodFlag)
+	withVariables, _ := cmd.Flags().GetStringArray("with-variable")
+	withHeaders, _ := cmd.Flags().GetStringArray("with-header")
+	withBodies, _ := cmd.Flags().GetStringArray("with-body")
+
+	requests := getRequestsFromArguments(envFlag, methodFlag, withVariables, withHeaders, withBodies, args)
 	outputFormat, _ := cmd.Flags().GetString("output")
 	header := []interface{}{"NAME", "METHOD", "URL", "DEFAULT ENVIRONMENT"}
 	if outputFormat == wideFormat {
@@ -91,14 +98,20 @@ func getRequest(cmd *cobra.Command, args []string) {
 	tabWriter.Flush()
 }
 func getEnvironment(cmd *cobra.Command, args []string) {
+	withVariables, _ := cmd.Flags().GetStringArray("with-variable")
+	environments := getEnvironmentsFromArguments(withVariables, args)
+
 	printTableRow("NAME", "VARIABLES")
-	for _, env := range models.GetAllEnvironments() {
+	for _, env := range environments {
 		printTableRow(env.Name, env.GetVariableNames())
 	}
 	tabWriter.Flush()
 }
 func getVariable(cmd *cobra.Command, args []string) {
-	variables := getVariablesFromArguments(cmd, args)
+	envFlag, _ := cmd.Flags().GetString("environment")
+	typeFlag, _ := cmd.Flags().GetString("type")
+
+	variables := getVariablesFromArguments(envFlag, typeFlag, args)
 	outputFormat, _ := cmd.Flags().GetString("output")
 	header := []interface{}{"NAME", "VALUE", "ENVIRONMENT", "TYPE"}
 	if outputFormat == wideFormat {
@@ -146,13 +159,7 @@ func printTableRow(cols ...interface{}) {
 
 	fmt.Fprintf(tabWriter, formatStr, cols...)
 }
-func getRequestsFromArguments(cmd *cobra.Command, args []string) []models.Request {
-	methodFlag, _ := cmd.Flags().GetString("method")
-	envFlag, _ := cmd.Flags().GetString("environment")
-	methodFlag = strings.ToUpper(methodFlag)
-	withVariables, _ := cmd.Flags().GetStringArray("with-variable")
-	withHeaders, _ := cmd.Flags().GetStringArray("with-header")
-	withBodies, _ := cmd.Flags().GetStringArray("with-body")
+func getRequestsFromArguments(envFlag, methodFlag string, withVariables, withHeaders, withBodies, args []string) []models.Request {
 	requestArr := []models.Request{}
 	if envFlag != "" && methodFlag != "" {
 		if len(args) == 0 {
@@ -253,9 +260,7 @@ func getRequestsFromArguments(cmd *cobra.Command, args []string) []models.Reques
 
 	return requests
 }
-func getEnvironmentsFromArguments(cmd *cobra.Command, args []string) []models.Environment {
-	withVariables, _ := cmd.Flags().GetStringArray("with-variable")
-
+func getEnvironmentsFromArguments(withVariables, args []string) []models.Environment {
 	environments := []models.Environment{}
 	if len(args) > 0 {
 		for _, arg := range args {
@@ -292,10 +297,7 @@ func getEnvironmentsFromArguments(cmd *cobra.Command, args []string) []models.En
 	}
 	return environments
 }
-func getVariablesFromArguments(cmd *cobra.Command, args []string) []models.Variable {
-	envFlag, _ := cmd.Flags().GetString("environment")
-	typeFlag, _ := cmd.Flags().GetString("type")
-
+func getVariablesFromArguments(envFlag, typeFlag string, args []string) []models.Variable {
 	// Most specific to least specific
 	if envFlag != "" && typeFlag != "" {
 		if len(args) == 0 {

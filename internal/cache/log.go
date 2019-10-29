@@ -14,7 +14,7 @@ var (
 
 func InitLogger() {
 	log = logrus.New()
-	log.SetLevel(logrus.DebugLevel)
+	log.SetLevel(logrus.InfoLevel)
 
 	log.SetReportCaller(true)
 	log.Formatter = &logrus.TextFormatter{

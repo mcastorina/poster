@@ -32,6 +32,7 @@ func init() {
 
 	// run flags
 	runCmd.Flags().StringP("env", "e", "", "Run the resources in the specified environment")
+	runCmd.Flags().StringArrayP("header", "H", []string{}, "Add or overwrite request headers")
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -52,6 +53,22 @@ func run(cmd *cobra.Command, args []string) {
 		resource, err := models.GetRunnableResourceByName(arg)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "eror: could not run %s: %+v\n", arg, err)
+			os.Exit(1)
+		}
+		// Get header flags
+		rawHeaders, _ := cmd.Flags().GetStringArray("header")
+		headers := []models.Header{}
+		for _, rawHeader := range rawHeaders {
+			header, _ := rawHeaderToSlice(rawHeader)
+			headers = append(headers, models.Header{
+				Key:   header[0],
+				Value: header[1],
+			})
+		}
+
+		// Add or override values
+		if err := resource.UpdateHeaders(headers); err != nil {
+			log.Errorf("Could not update headers for %s: %+v\n", arg, err)
 			os.Exit(1)
 		}
 

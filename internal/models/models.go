@@ -33,6 +33,7 @@ type Resource interface {
 type Runnable interface {
 	Run() (*http.Response, error)
 	RunEnv(env Environment) (*http.Response, error)
+	UpdateHeaders(headers []Header) error
 }
 
 // Header
@@ -142,6 +143,21 @@ func (r *Request) Validate() error {
 		return errorInvalidMethod
 	}
 	r.Method = strings.ToUpper(r.Method)
+	return nil
+}
+func (r *Request) UpdateHeaders(headers []Header) error {
+	headerMap := make(map[string]*Header)
+	for i, header := range r.Headers {
+		headerMap[header.Key] = &r.Headers[i]
+	}
+
+	for _, newHeader := range headers {
+		if header, ok := headerMap[newHeader.Key]; ok {
+			header.Value = newHeader.Value
+		} else {
+			r.Headers = append(r.Headers, newHeader)
+		}
+	}
 	return nil
 }
 

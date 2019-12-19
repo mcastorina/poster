@@ -35,6 +35,7 @@ type Runnable interface {
 	RunEnv(env Environment) (*http.Response, error)
 	UpdateHeaders(headers []Header) error
 	UpdateBody(body string) error
+	UpdateVariables(variables []Variable) error
 }
 
 // Header
@@ -57,6 +58,8 @@ type Request struct {
 	Headers     []Header    `yaml:"headers"`
 }
 
+var overrideVariables []Variable
+
 func (r *Request) Run() (*http.Response, error) {
 	// TODO: Check for dependency cycles
 	return r.RunEnv(r.Environment)
@@ -68,7 +71,10 @@ func (r *Request) RunEnv(e Environment) (*http.Response, error) {
 			log.Errorf("%+v\n", err)
 			return nil, errorGenerateVariableFailed
 		}
-		variable.Save()
+		// TODO: This is a hack to prevent saving override variables
+		if variable.Type != ConstType {
+			variable.Save()
+		}
 	}
 
 	methodStr := e.ReplaceVariables(r.Method)
@@ -165,6 +171,10 @@ func (r *Request) UpdateBody(body string) error {
 	r.Body = body
 	return nil
 }
+func (r *Request) UpdateVariables(variables []Variable) error {
+	overrideVariables = variables
+	return nil
+}
 
 // Environment
 type Environment struct {
@@ -247,6 +257,9 @@ func (e *Environment) GetVariablesInRequest(r *Request) []Variable {
 	for _, variable := range e.GetVariables() {
 		validVariables[variable.Name] = variable
 	}
+	for _, variable := range overrideVariables {
+		validVariables[variable.Name] = variable
+	}
 	// Build search string as a combination of all parts
 	// of the request that can be replaced
 	searchString := r.Method + "\n" + r.URL + "\n" + r.Body
@@ -274,6 +287,9 @@ func (e *Environment) GetVariablesWithGlobal() []Variable {
 		validVariables[variable.Name] = variable
 	}
 	for _, variable := range e.GetVariables() {
+		validVariables[variable.Name] = variable
+	}
+	for _, variable := range overrideVariables {
 		validVariables[variable.Name] = variable
 	}
 	// Build return array

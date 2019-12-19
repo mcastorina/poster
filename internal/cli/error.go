@@ -12,6 +12,7 @@ var (
 	errorFileEmpty                  = errors.New("empty file")
 	errorFileUnchanged              = errors.New("no changes")
 	errorNoEditorFound              = errors.New("no editor found")
+	errorInvalidVariableFormat      = errors.New("variable should be in the format \"key=value\"")
 
 	missingFlagBase  = "expected flag missing: %s"
 	missingFlagsBase = "expected flags missing: %s"

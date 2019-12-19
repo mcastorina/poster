@@ -24,7 +24,8 @@ requests in the suite.
 All parts of the resource will be parsed for variables and replaced with their
 current value.
 `,
-	Run: run,
+	Run:  run,
+	Args: runArgs,
 }
 
 func init() {
@@ -34,6 +35,7 @@ func init() {
 	runCmd.Flags().StringP("env", "e", "", "Run the resources in the specified environment")
 	runCmd.Flags().StringArrayP("header", "H", []string{}, "Add or overwrite request headers")
 	runCmd.Flags().StringP("data", "d", "", "Add or overwrite the request body")
+	runCmd.Flags().StringArrayP("variable", "V", []string{}, "Add or overwrite request variables")
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -68,6 +70,17 @@ func run(cmd *cobra.Command, args []string) {
 		}
 		// Get body flag
 		data, _ := cmd.Flags().GetString("data")
+		// Get variable flags
+		rawVariables, _ := cmd.Flags().GetStringArray("variable")
+		variables := []models.Variable{}
+		for _, rawVariable := range rawVariables {
+			variable, _ := rawVariableToSlice(rawVariable)
+			variables = append(variables, models.Variable{
+				Name:  variable[0],
+				Value: variable[1],
+				Type:  models.ConstType,
+			})
+		}
 
 		// Add or override values
 		if err := resource.UpdateHeaders(headers); err != nil {
@@ -79,6 +92,10 @@ func run(cmd *cobra.Command, args []string) {
 				log.Errorf("Could not update the body for %s: %+v\n", arg, err)
 				os.Exit(1)
 			}
+		}
+		if err := resource.UpdateVariables(variables); err != nil {
+			log.Errorf("Could not update headers for %s: %+v\n", arg, err)
+			os.Exit(1)
 		}
 
 		var resp *http.Response
@@ -96,6 +113,25 @@ func run(cmd *cobra.Command, args []string) {
 
 		printResponse(resp, verboseFlag)
 	}
+}
+
+// argument functions
+func runArgs(cmd *cobra.Command, args []string) error {
+	// check headers are valid (key:value)
+	headers, _ := cmd.Flags().GetStringArray("header")
+	for _, header := range headers {
+		if _, err := rawHeaderToSlice(header); err != nil {
+			return err
+		}
+	}
+	// check variables are valid (key=value)
+	variables, _ := cmd.Flags().GetStringArray("variable")
+	for _, variable := range variables {
+		if _, err := rawVariableToSlice(variable); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // helper functions
@@ -121,4 +157,18 @@ func printResponse(resp *http.Response, verbose bool) error {
 	}
 
 	return nil
+}
+func rawVariableToSlice(variable string) ([]string, error) {
+	values := strings.SplitN(variable, "=", 2)
+	if len(values) != 2 {
+		return nil, errorInvalidVariableFormat
+	}
+	key := strings.Trim(values[0], " \t")
+	value := strings.Trim(values[1], " \t")
+
+	if len(key) == 0 {
+		return nil, errorInvalidVariableFormat
+	}
+
+	return []string{key, value}, nil
 }

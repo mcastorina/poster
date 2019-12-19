@@ -33,6 +33,7 @@ func init() {
 	// run flags
 	runCmd.Flags().StringP("env", "e", "", "Run the resources in the specified environment")
 	runCmd.Flags().StringArrayP("header", "H", []string{}, "Add or overwrite request headers")
+	runCmd.Flags().StringP("data", "d", "", "Add or overwrite the request body")
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -65,11 +66,19 @@ func run(cmd *cobra.Command, args []string) {
 				Value: header[1],
 			})
 		}
+		// Get body flag
+		data, _ := cmd.Flags().GetString("data")
 
 		// Add or override values
 		if err := resource.UpdateHeaders(headers); err != nil {
 			log.Errorf("Could not update headers for %s: %+v\n", arg, err)
 			os.Exit(1)
+		}
+		if data != "" {
+			if err := resource.UpdateBody(data); err != nil {
+				log.Errorf("Could not update the body for %s: %+v\n", arg, err)
+				os.Exit(1)
+			}
 		}
 
 		var resp *http.Response

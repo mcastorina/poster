@@ -34,6 +34,7 @@ type Runnable interface {
 	Run() (*http.Response, error)
 	RunEnv(env Environment) (*http.Response, error)
 	UpdateHeaders(headers []Header) error
+	UpdateBody(body string) error
 }
 
 // Header
@@ -158,6 +159,10 @@ func (r *Request) UpdateHeaders(headers []Header) error {
 			r.Headers = append(r.Headers, newHeader)
 		}
 	}
+	return nil
+}
+func (r *Request) UpdateBody(body string) error {
+	r.Body = body
 	return nil
 }
 
